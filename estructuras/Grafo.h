@@ -1,319 +1,179 @@
-/**
- * @file Grafo.h
- * @brief Implementación de un grafo dirigido ponderado desde cero
- * @author v0
- * @date Mayo 2025
- */
-
 #ifndef GRAFO_H
 #define GRAFO_H
 
 #include "Lista.h"
 #include "Cola.h"
-#include <iostream>
-#include <limits>
+#include <stdexcept>
+#include <string>
 
-/**
- * @brief Arista para el grafo
- * @tparam T Tipo de dato para los vértices
- */
-template <typename T>
-struct Arista {
-    int destino;            ///< Índice del vértice destino
-    int peso;               ///< Peso de la arista
-    
-    /**
-     * @brief Constructor de la arista
-     * @param _destino Índice del vértice destino
-     * @param _peso Peso de la arista
-     */
-    Arista(int _destino, int _peso) : destino(_destino), peso(_peso) {}
-    
-    /**
-     * @brief Operador de igualdad
-     * @param otra Arista a comparar
-     * @return true si son iguales, false en caso contrario
-     */
-    bool operator==(const Arista& otra) const {
-        return destino == otra.destino && peso == otra.peso;
-    }
-};
-
-/**
- * @brief Grafo dirigido ponderado implementado con listas de adyacencia
- * @tparam T Tipo de dato para los vértices
- */
 template <typename T>
 class Grafo {
 private:
-    Lista<T> vertices;                  ///< Lista de vértices
-    Lista<Lista<Arista<T>>> adyacencia; ///< Lista de adyacencia
-    
+    struct Arista {
+        int destino;
+        int peso;
+
+        Arista(int _destino, int _peso = 1) : destino(_destino), peso(_peso) {}
+
+        bool operator==(const Arista& otra) const {
+            return destino == otra.destino && peso == otra.peso;
+        }
+    };
+
+    Lista<T> vertices;
+    Lista<Lista<Arista>> adyacencia;
+
 public:
-    /**
-     * @brief Constructor por defecto
-     */
+    // Constructor
     Grafo() {}
-    
-    /**
-     * @brief Destructor
-     */
+
+    // Destructor
     ~Grafo() {
-        // La memoria se libera automáticamente con los destructores de Lista
+        vaciar();
     }
-    
-    /**
-     * @brief Agrega un vértice al grafo
-     * @param vertice Vértice a agregar
-     * @return Índice del vértice agregado
-     */
-    int agregarVertice(const T& vertice) {
+
+    // Agregar vértice
+    bool agregarVertice(const T& vertice) {
+        if (existeVertice(vertice)) {
+            return false;
+        }
+
         vertices.agregar(vertice);
-        adyacencia.agregar(Lista<Arista<T>>());
-        return vertices.obtenerTamano() - 1;
-    }
-    
-    /**
-     * @brief Agrega una arista dirigida entre dos vértices
-     * @param origen Índice del vértice origen
-     * @param destino Índice del vértice destino
-     * @param peso Peso de la arista
-     * @return true si se agregó correctamente, false en caso contrario
-     */
-    bool agregarArista(int origen, int destino, int peso = 1) {
-        if (origen < 0 || origen >= vertices.obtenerTamano() ||
-            destino < 0 || destino >= vertices.obtenerTamano()) {
-            return false;
-        }
-        
-        Lista<Arista<T>> listaAdyacencia;
-        adyacencia.obtener(origen, listaAdyacencia);
-        
-        // Verificar si la arista ya existe
-        for (auto it = listaAdyacencia.inicio(); it != listaAdyacencia.fin(); ++it) {
-            if ((*it).destino == destino) {
-                return false; // La arista ya existe
-            }
-        }
-        
-        listaAdyacencia.agregar(Arista<T>(destino, peso));
-        adyacencia.eliminar(origen);
-        adyacencia.insertar(listaAdyacencia, origen);
-        
+        adyacencia.agregar(Lista<Arista>());
         return true;
     }
-    
-    /**
-     * @brief Elimina una arista entre dos vértices
-     * @param origen Índice del vértice origen
-     * @param destino Índice del vértice destino
-     * @return true si se eliminó correctamente, false en caso contrario
-     */
-    bool eliminarArista(int origen, int destino) {
-        if (origen < 0 || origen >= vertices.obtenerTamano() ||
-            destino < 0 || destino >= vertices.obtenerTamano()) {
-            return false;
-        }
-        
-        Lista<Arista<T>> listaAdyacencia;
-        adyacencia.obtener(origen, listaAdyacencia);
-        
-        for (auto it = listaAdyacencia.inicio(); it != listaAdyacencia.fin(); ++it) {
-            if ((*it).destino == destino) {
-                listaAdyacencia.eliminarPorValor(*it);
-                adyacencia.eliminar(origen);
-                adyacencia.insertar(listaAdyacencia, origen);
-                return true;
-            }
-        }
-        
-        return false; // La arista no existe
+
+    // Verificar si existe un vértice
+    bool existeVertice(const T& vertice) const {
+        return buscarVertice(vertice) != -1;
     }
-    
-    /**
-     * @brief Obtiene un vértice por su índice
-     * @param indice Índice del vértice
-     * @param resultado Variable donde se almacenará el resultado
-     * @return true si se obtuvo correctamente, false en caso contrario
-     */
-    bool obtenerVertice(int indice, T& resultado) const {
-        return vertices.obtener(indice, resultado);
-    }
-    
-    /**
-     * @brief Busca un vértice por su valor
-     * @param vertice Valor del vértice a buscar
-     * @return Índice del vértice o -1 si no se encuentra
-     */
+
+    // Buscar índice de un vértice
     int buscarVertice(const T& vertice) const {
-        return vertices.buscar(vertice);
-    }
-    
-    /**
-     * @brief Obtiene la cantidad de vértices
-     * @return Número de vértices en el grafo
-     */
-    int obtenerNumeroVertices() const {
-        return vertices.obtenerTamano();
-    }
-    
-    /**
-     * @brief Verifica si existe una arista entre dos vértices
-     * @param origen Índice del vértice origen
-     * @param destino Índice del vértice destino
-     * @return true si existe la arista, false en caso contrario
-     */
-    bool existeArista(int origen, int destino) const {
-        if (origen < 0 || origen >= vertices.obtenerTamano() ||
-            destino < 0 || destino >= vertices.obtenerTamano()) {
-            return false;
-        }
-        
-        Lista<Arista<T>> listaAdyacencia;
-        adyacencia.obtener(origen, listaAdyacencia);
-        
-        for (auto it = listaAdyacencia.inicio(); it != listaAdyacencia.fin(); ++it) {
-            if ((*it).destino == destino) {
-                return true;
+        for (int i = 0; i < vertices.obtenerTamanio(); i++) {
+            if (vertices.obtener(i) == vertice) {
+                return i;
             }
         }
-        
-        return false;
+        return -1;
     }
-    
-    /**
-     * @brief Obtiene el peso de una arista
-     * @param origen Índice del vértice origen
-     * @param destino Índice del vértice destino
-     * @param peso Variable donde se almacenará el resultado
-     * @return true si se obtuvo correctamente, false en caso contrario
-     */
-    bool obtenerPesoArista(int origen, int destino, int& peso) const {
-        if (origen < 0 || origen >= vertices.obtenerTamano() ||
-            destino < 0 || destino >= vertices.obtenerTamano()) {
+
+    // Agregar arista
+    bool agregarArista(const T& origen, const T& destino, int peso = 1) {
+        int indiceOrigen = buscarVertice(origen);
+        int indiceDestino = buscarVertice(destino);
+
+        if (indiceOrigen == -1 || indiceDestino == -1) {
             return false;
         }
-        
-        Lista<Arista<T>> listaAdyacencia;
-        adyacencia.obtener(origen, listaAdyacencia);
-        
-        for (auto it = listaAdyacencia.inicio(); it != listaAdyacencia.fin(); ++it) {
-            if ((*it).destino == destino) {
-                peso = (*it).peso;
-                return true;
+
+        // Verificar si la arista ya existe
+        Lista<Arista> listaAdyacencia = adyacencia.obtener(indiceOrigen);
+        for (int i = 0; i < listaAdyacencia.obtenerTamanio(); i++) {
+            if (listaAdyacencia.obtener(i).destino == indiceDestino) {
+                return false;
             }
         }
-        
-        return false;
-    }
-    
-    /**
-     * @brief Obtiene los vértices adyacentes a un vértice
-     * @param origen Índice del vértice
-     * @param adyacentes Lista donde se almacenarán los índices de los vértices adyacentes
-     * @return true si se obtuvo correctamente, false en caso contrario
-     */
-    bool obtenerAdyacentes(int origen, Lista<int>& adyacentes) const {
-        if (origen < 0 || origen >= vertices.obtenerTamano()) {
-            return false;
-        }
-        
-        Lista<Arista<T>> listaAdyacencia;
-        adyacencia.obtener(origen, listaAdyacencia);
-        
-        for (auto it = listaAdyacencia.inicio(); it != listaAdyacencia.fin(); ++it) {
-            adyacentes.agregar((*it).destino);
-        }
-        
+
+        // Agregar la arista
+        listaAdyacencia.agregar(Arista(indiceDestino, peso));
+        adyacencia.modificar(indiceOrigen, listaAdyacencia);
         return true;
     }
-    
-    /**
-     * @brief Realiza un recorrido en anchura (BFS) desde un vértice
-     * @param inicio Índice del vértice inicial
-     * @param visitados Lista donde se almacenarán los índices de los vértices visitados
-     * @return true si se realizó correctamente, false en caso contrario
-     */
-    bool bfs(int inicio, Lista<int>& visitados) const {
-        if (inicio < 0 || inicio >= vertices.obtenerTamano()) {
-            return false;
+
+    // Obtener vértices adyacentes (BFS)
+    Lista<T> obtenerVecinosBFS(const T& origen) const {
+        Lista<T> resultado;
+        int indiceOrigen = buscarVertice(origen);
+
+        if (indiceOrigen == -1) {
+            return resultado;
         }
-        
+
         // Arreglo para marcar vértices visitados
-        bool* marcados = new bool[vertices.obtenerTamano()];
-        for (int i = 0; i < vertices.obtenerTamano(); i++) {
-            marcados[i] = false;
+        bool* visitados = new bool[vertices.obtenerTamanio()];
+        for (int i = 0; i < vertices.obtenerTamanio(); i++) {
+            visitados[i] = false;
         }
-        
+
+        // Cola para BFS
         Cola<int> cola;
-        cola.encolar(inicio);
-        marcados[inicio] = true;
-        
+        cola.encolar(indiceOrigen);
+        visitados[indiceOrigen] = true;
+
         while (!cola.estaVacia()) {
-            int actual;
-            cola.frenteCola(actual);
+            int actual = cola.frente();
             cola.desencolar();
-            
-            visitados.agregar(actual);
-            
-            Lista<Arista<T>> listaAdyacencia;
-            adyacencia.obtener(actual, listaAdyacencia);
-            
-            for (auto it = listaAdyacencia.inicio(); it != listaAdyacencia.fin(); ++it) {
-                int adyacente = (*it).destino;
-                if (!marcados[adyacente]) {
-                    cola.encolar(adyacente);
-                    marcados[adyacente] = true;
+
+            // No agregar el vértice origen al resultado
+            if (actual != indiceOrigen) {
+                resultado.agregar(vertices.obtener(actual));
+            }
+
+            // Explorar vecinos
+            Lista<Arista> vecinos = adyacencia.obtener(actual);
+            for (int i = 0; i < vecinos.obtenerTamanio(); i++) {
+                int vecino = vecinos.obtener(i).destino;
+                if (!visitados[vecino]) {
+                    cola.encolar(vecino);
+                    visitados[vecino] = true;
                 }
             }
         }
-        
-        delete[] marcados;
-        return true;
+
+        delete[] visitados;
+        return resultado;
     }
-    
-    /**
-     * @brief Realiza un recorrido en profundidad (DFS) desde un vértice
-     * @param inicio Índice del vértice inicial
-     * @param visitados Lista donde se almacenarán los índices de los vértices visitados
-     * @return true si se realizó correctamente, false en caso contrario
-     */
-    bool dfs(int inicio, Lista<int>& visitados) const {
-        if (inicio < 0 || inicio >= vertices.obtenerTamano()) {
-            return false;
+
+    // Obtener vértices adyacentes (DFS)
+    Lista<T> obtenerVecinosDFS(const T& origen) const {
+        Lista<T> resultado;
+        int indiceOrigen = buscarVertice(origen);
+
+        if (indiceOrigen == -1) {
+            return resultado;
         }
-        
+
         // Arreglo para marcar vértices visitados
-        bool* marcados = new bool[vertices.obtenerTamano()];
-        for (int i = 0; i < vertices.obtenerTamano(); i++) {
-            marcados[i] = false;
+        bool* visitados = new bool[vertices.obtenerTamanio()];
+        for (int i = 0; i < vertices.obtenerTamanio(); i++) {
+            visitados[i] = false;
         }
-        
+
         // Llamada al método auxiliar recursivo
-        dfsRecursivo(inicio, visitados, marcados);
-        
-        delete[] marcados;
-        return true;
+        dfsRecursivo(indiceOrigen, resultado, visitados, indiceOrigen);
+
+        delete[] visitados;
+        return resultado;
     }
-    
+
+    // Vaciar el grafo
+    void vaciar() {
+        vertices.vaciar();
+        adyacencia.vaciar();
+    }
+
+    // Obtener número de vértices
+    int obtenerNumVertices() const {
+        return vertices.obtenerTamanio();
+    }
+
 private:
-    /**
-     * @brief Método auxiliar recursivo para DFS
-     * @param actual Índice del vértice actual
-     * @param visitados Lista donde se almacenarán los índices de los vértices visitados
-     * @param marcados Arreglo para marcar vértices visitados
-     */
-    void dfsRecursivo(int actual, Lista<int>& visitados, bool* marcados) const {
-        marcados[actual] = true;
-        visitados.agregar(actual);
-        
-        Lista<Arista<T>> listaAdyacencia;
-        adyacencia.obtener(actual, listaAdyacencia);
-        
-        for (auto it = listaAdyacencia.inicio(); it != listaAdyacencia.fin(); ++it) {
-            int adyacente = (*it).destino;
-            if (!marcados[adyacente]) {
-                dfsRecursivo(adyacente, visitados, marcados);
+    // Método auxiliar recursivo para DFS
+    void dfsRecursivo(int actual, Lista<T>& resultado, bool* visitados, int origen) const {
+        visitados[actual] = true;
+
+        // No agregar el vértice origen al resultado
+        if (actual != origen) {
+            resultado.agregar(vertices.obtener(actual));
+        }
+
+        // Explorar vecinos
+        Lista<Arista> vecinos = adyacencia.obtener(actual);
+        for (int i = 0; i < vecinos.obtenerTamanio(); i++) {
+            int vecino = vecinos.obtener(i).destino;
+            if (!visitados[vecino]) {
+                dfsRecursivo(vecino, resultado, visitados, origen);
             }
         }
     }

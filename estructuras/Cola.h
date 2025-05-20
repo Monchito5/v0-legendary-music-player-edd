@@ -1,127 +1,83 @@
-/**
- * @file Cola.h
- * @brief Implementación de una cola genérica desde cero
- * @author v0
- * @date Mayo 2025
- */
-
 #ifndef COLA_H
 #define COLA_H
 
-#include <iostream>
+#include <stdexcept>
 
-/**
- * @brief Nodo para la cola
- * @tparam T Tipo de dato a almacenar
- */
-template <typename T>
-struct NodoCola {
-    T dato;                 ///< Dato almacenado en el nodo
-    NodoCola<T>* siguiente; ///< Puntero al siguiente nodo
-    
-    /**
-     * @brief Constructor del nodo
-     * @param _dato Dato a almacenar
-     */
-    NodoCola(const T& _dato) : dato(_dato), siguiente(nullptr) {}
-};
-
-/**
- * @brief Cola genérica implementada con nodos enlazados
- * @tparam T Tipo de dato a almacenar
- */
 template <typename T>
 class Cola {
 private:
-    NodoCola<T>* frente;    ///< Puntero al primer elemento
-    NodoCola<T>* final;     ///< Puntero al último elemento
-    int tamano;             ///< Cantidad de elementos en la cola
+    struct Nodo {
+        T dato;
+        Nodo* siguiente;
+
+        Nodo(const T& _dato) : dato(_dato), siguiente(nullptr) {}
+    };
+
+    Nodo* frente_;
+    Nodo* final_;
+    int tamanio;
 
 public:
-    /**
-     * @brief Constructor por defecto
-     */
-    Cola() : frente(nullptr), final(nullptr), tamano(0) {}
-    
-    /**
-     * @brief Destructor
-     */
+    // Constructor
+    Cola() : frente_(nullptr), final_(nullptr), tamanio(0) {}
+
+    // Destructor
     ~Cola() {
         vaciar();
     }
-    
-    /**
-     * @brief Agrega un elemento al final de la cola
-     * @param dato Elemento a agregar
-     */
-    void encolar(const T& dato) {
-        NodoCola<T>* nuevo = new NodoCola<T>(dato);
-        
+
+    // Encolar elemento
+    void encolar(const T& elemento) {
+        Nodo* nuevo = new Nodo(elemento);
+
         if (estaVacia()) {
-            frente = nuevo;
-            final = nuevo;
+            frente_ = nuevo;
+            final_ = nuevo;
         } else {
-            final->siguiente = nuevo;
-            final = nuevo;
+            final_->siguiente = nuevo;
+            final_ = nuevo;
         }
-        
-        tamano++;
+
+        tamanio++;
     }
-    
-    /**
-     * @brief Elimina el elemento del frente de la cola
-     * @return true si se desencoló correctamente, false si la cola está vacía
-     */
+
+    // Desencolar elemento
     bool desencolar() {
         if (estaVacia()) {
             return false;
         }
-        
-        NodoCola<T>* temp = frente;
-        frente = frente->siguiente;
-        
-        if (frente == nullptr) {
-            final = nullptr;
+
+        Nodo* temp = frente_;
+        frente_ = frente_->siguiente;
+
+        if (frente_ == nullptr) {
+            final_ = nullptr;
         }
-        
+
         delete temp;
-        tamano--;
+        tamanio--;
         return true;
     }
-    
-    /**
-     * @brief Obtiene el elemento del frente sin eliminarlo
-     * @param resultado Variable donde se almacenará el resultado
-     * @return true si se obtuvo correctamente, false si la cola está vacía
-     */
-    bool frenteCola(T& resultado) const {
+
+    // Obtener elemento en el frente
+    T frente() const {
         if (estaVacia()) {
-            return false;
+            throw std::out_of_range("La cola est� vac�a");
         }
-        
-        resultado = frente->dato;
-        return true;
+        return frente_->dato;
     }
-    
-    /**
-     * @brief Verifica si la cola está vacía
-     * @return true si está vacía, false en caso contrario
-     */
+
+    // Verificar si la cola est� vac�a
     bool estaVacia() const {
-        return tamano == 0;
+        return tamanio == 0;
     }
-    
-    /**
-     * @brief Obtiene el tamaño de la cola
-     * @return Cantidad de elementos en la cola
-     */
-    int obtenerTamano() const {
-        return tamano;
+
+    // Obtener tama�o de la cola
+    int obtenerTamanio() const {
+        return tamanio;
     }
-    
-    /**
-     * @brief Vacía la cola liberando toda la memoria
-     */
+
+    // Vaciar la cola
     void vaciar() {
         while (!estaVacia()) {
             desencolar();

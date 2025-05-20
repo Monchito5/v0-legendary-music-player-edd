@@ -1,35 +1,35 @@
 # Reproductor de Música Legendario
 
-## Descripción
-Este proyecto implementa un reproductor de música didáctico en C++ que utiliza estructuras de datos y algoritmos implementados desde cero. El objetivo es practicar y demostrar el uso de listas estáticas y dinámicas, pilas, colas, grafos, algoritmos de búsqueda y ordenamiento, y gestión de memoria.
+## Descripcion
+Este proyecto implementa un reproductor de musica didactico en C++ que utiliza estructuras de datos y algoritmos implementados desde cero. El objetivo es practicar y demostrar el uso de listas estaticas y dinamicas, pilas, colas, grafos, algoritmos de busqueda y ordenamiento, y gestion de memoria.
 
-## Características
+## Caracteristicas
 
 ### Biblioteca:
 - Carga desde disco y lista todas las canciones disponibles
-- Muestra metadatos (título, artista, álbum, año, géneros)
+- Muestra metadatos (titulo, artista, album, ano, generos)
 
 ### Playlists:
-- Crear, renombrar y eliminar listas de reproducción
-- Añadir y quitar canciones por título
+- Crear, renombrar y eliminar listas de reproduccion
+- Anadir y quitar canciones por titulo
 
-### Reproducción:
+### Reproduccion:
 - Iniciar, pausar y cambiar pista manualmente
-- Control de volumen y posición dentro de la pista
+- Control de volumen y posicion dentro de la pista
 
 ### Historial:
-- Registra las últimas N canciones reproducidas
+- Registra las ultimas N canciones reproducidas
 - Permite "deshacer" al tema anterior
 
-### Cola de reproducción:
+### Cola de reproduccion:
 - Encolar pistas para "play next"
 - Desencolar al reproducir o cancelar
 
-### Búsqueda:
-- Buscar canciones por título, artista o álbum (búsqueda lineal y binaria)
+### Busqueda:
+- Buscar canciones por titulo, artista o album (busqueda lineal y binaria)
 
 ### Ordenamiento:
 - Ordenar la biblioteca y la cola (bubble, insertion, quicksort, mergesort)
 
 ### Recomendaciones:
-- Construir un grafo de afinidad (género/artista) y sugerir l
+- Construir un grafo de afinidad (genero/artista) y sugerir l

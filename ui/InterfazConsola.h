@@ -1,42 +1,26 @@
-/**
- * @file InterfazConsola.h
- * @brief Definición de la clase InterfazConsola para la interfaz de usuario en consola
- * @author v0
- * @date Mayo 2025
- */
-
 #ifndef INTERFAZ_CONSOLA_H
 #define INTERFAZ_CONSOLA_H
 
 #include <iostream>
 #include <string>
-#include <iomanip>
-#include "../servicios/BibliotecaMusical.h"
-#include "../servicios/ReproductorMusica.h"
+#include <cstdlib>
+#include <thread>
+#include <chrono>
 
-/**
- * @brief Clase que implementa la interfaz de usuario en consola
- */
+#include "../servicios/BibliotecaMusical.h"
+#include "../servicios/UTF8Util.h"
+
 class InterfazConsola {
 private:
-    BibliotecaMusical* biblioteca;     ///< Puntero a la biblioteca musical
-    ReproductorMusica* reproductor;    ///< Puntero a el reproductor de música
-    bool ejecutando;                   ///< Indica si la aplicación está en ejecución
+    BibliotecaMusical& biblioteca;
+    bool ejecutando;
     
 public:
-    /**
-     * @brief Constructor con parámetros
-     * @param _biblioteca Puntero a la biblioteca musical
-     * @param _reproductor Puntero a el reproductor de música
-     */
-    InterfazConsola(BibliotecaMusical* _biblioteca, ReproductorMusica* _reproductor)
-        : biblioteca(_biblioteca), reproductor(_reproductor), ejecutando(false) {}
+    InterfazConsola(BibliotecaMusical& _biblioteca) 
+        : biblioteca(_biblioteca), ejecutando(true) {}
     
-    /**
-     * @brief Inicia la interfaz de usuario
-     */
     void iniciar() {
-        ejecutando = true;
+        mostrarBienvenida();
         
         while (ejecutando) {
             mostrarMenuPrincipal();
@@ -44,1091 +28,805 @@ public:
             
             switch (opcion) {
                 case 1:
-                    menuBiblioteca();
+                    mostrarBiblioteca();
                     break;
                 case 2:
-                    menuPlaylists();
+                    mostrarListasReproduccion();
                     break;
                 case 3:
-                    menuReproduccion();
+                    buscarCanciones();
                     break;
                 case 4:
-                    menuBusqueda();
+                    reproducirCancion();
                     break;
                 case 5:
-                    menuOrdenamiento();
+                    mostrarReproduccionActual();
+                    break;
+                case 6:
+                    mostrarColaReproduccion();
+                    break;
+                case 7:
+                    mostrarHistorial();
+                    break;
+                case 8:
+                    mostrarRecomendaciones();
                     break;
                 case 0:
                     ejecutando = false;
                     break;
                 default:
                     std::cout << "Opción inválida. Intente de nuevo." << std::endl;
+                    break;
+            }
+            
+            if (ejecutando) {
+                std::cout << "\nPresione Enter para continuar...";
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cin.get();
+                limpiarPantalla();
             }
         }
         
-        // Guardar la biblioteca antes de salir
-        biblioteca->guardarBiblioteca();
-        std::cout << "¡Hasta pronto!" << std::endl;
+        mostrarDespedida();
     }
     
 private:
-    /**
-     * @brief Muestra el menú principal
-     */
-    void mostrarMenuPrincipal() const {
+    void mostrarBienvenida() {
         limpiarPantalla();
-        mostrarCabecera("REPRODUCTOR DE MÚSICA LEGENDARIO");
+        std::cout << UTF8Util::formatearTitulo("REPRODUCTOR DE M" + UTF8Util::U_ACENTO() + "SICA") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Bienvenido al reproductor de música didáctico." << std::endl;
+        std::cout << "Este programa utiliza estructuras de datos como listas, pilas, colas y grafos." << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "\nPresione Enter para continuar...";
+        std::cin.get();
+        limpiarPantalla();
+    }
+    
+    void mostrarDespedida() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("GRACIAS POR USAR EL REPRODUCTOR DE M" + UTF8Util::U_ACENTO() + "SICA") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Hasta pronto!" << std::endl;
+    }
+    
+    void mostrarMenuPrincipal() {
+        std::cout << UTF8Util::formatearTitulo("MEN" + UTF8Util::U_ACENTO() + " PRINCIPAL") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
         
         // Mostrar información de reproducción actual
-        mostrarInfoReproduccion();
-        
-        std::cout << "\nMENÚ PRINCIPAL\n";
-        std::cout << "1. Biblioteca\n";
-        std::cout << "2. Playlists\n";
-        std::cout << "3. Reproducción\n";
-        std::cout << "4. Búsqueda\n";
-        std::cout << "5. Ordenamiento\n";
-        std::cout << "0. Salir\n";
-        std::cout << "\nSeleccione una opción: ";
-    }
-    
-    /**
-     * @brief Muestra el menú de biblioteca
-     */
-    void menuBiblioteca() {
-        bool regresarMenuPrincipal = false;
-        
-        while (!regresarMenuPrincipal) {
-            limpiarPantalla();
-            mostrarCabecera("BIBLIOTECA MUSICAL");
-            
-            // Mostrar información de reproducción actual
-            mostrarInfoReproduccion();
-            
-            // Mostrar canciones
-            mostrarCanciones();
-            
-            std::cout << "\nOPCIONES DE BIBLIOTECA\n";
-            std::cout << "1. Reproducir canción\n";
-            std::cout << "2. Encolar canción\n";
-            std::cout << "3. Agregar canción a playlist\n";
-            std::cout << "0. Volver al menú principal\n";
-            std::cout << "\nSeleccione una opción: ";
-            
-            int opcion = leerOpcion();
-            
-            switch (opcion) {
-                case 1: {
-                    std::cout << "Ingrese el número de la canción a reproducir: ";
-                    int numCancion = leerOpcion();
-                    
-                    if (numCancion >= 0 && numCancion < biblioteca->obtenerNumeroCanciones()) {
-                        reproductor->reproducir(numCancion);
-                        std::cout << "Reproduciendo canción..." << std::endl;
-                    } else {
-                        std::cout << "Número de canción inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 2: {
-                    std::cout << "Ingrese el número de la canción a encolar: ";
-                    int numCancion = leerOpcion();
-                    
-                    if (numCancion >= 0 && numCancion < biblioteca->obtenerNumeroCanciones()) {
-                        reproductor->encolarCancion(numCancion);
-                        std::cout << "Canción encolada." << std::endl;
-                    } else {
-                        std::cout << "Número de canción inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 3: {
-                    if (biblioteca->obtenerNumeroPlaylists() == 0) {
-                        std::cout << "No hay playlists disponibles. Cree una primero." << std::endl;
-                        pausar();
-                        break;
-                    }
-                    
-                    // Mostrar playlists disponibles
-                    std::cout << "\nPlaylists disponibles:\n";
-                    for (int i = 0; i < biblioteca->obtenerNumeroPlaylists(); i++) {
-                        Playlist playlist;
-                        biblioteca->obtenerPlaylist(i, playlist);
-                        std::cout << i << ". " << playlist.obtenerNombre() << std::endl;
-                    }
-                    
-                    std::cout << "Ingrese el número de la playlist: ";
-                    int numPlaylist = leerOpcion();
-                    
-                    if (numPlaylist >= 0 && numPlaylist < biblioteca->obtenerNumeroPlaylists()) {
-                        std::cout << "Ingrese el número de la canción a agregar: ";
-                        int numCancion = leerOpcion();
-                        
-                        if (numCancion >= 0 && numCancion < biblioteca->obtenerNumeroCanciones()) {
-                            biblioteca->agregarCancionAPlaylist(numPlaylist, numCancion);
-                            std::cout << "Canción agregada a la playlist." << std::endl;
-                        } else {
-                            std::cout << "Número de canción inválido." << std::endl;
-                        }
-                    } else {
-                        std::cout << "Número de playlist inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 0:
-                    regresarMenuPrincipal = true;
-                    break;
-                default:
-                    std::cout << "Opción inválida. Intente de nuevo." << std::endl;
-                    pausar();
-            }
-        }
-    }
-    
-    /**
-     * @brief Muestra el menú de playlists
-     */
-    void menuPlaylists() {
-        bool regresarMenuPrincipal = false;
-        
-        while (!regresarMenuPrincipal) {
-            limpiarPantalla();
-            mostrarCabecera("PLAYLISTS");
-            
-            // Mostrar información de reproducción actual
-            mostrarInfoReproduccion();
-            
-            // Mostrar playlists
-            mostrarPlaylists();
-            
-            std::cout << "\nOPCIONES DE PLAYLISTS\n";
-            std::cout << "1. Crear playlist\n";
-            std::cout << "2. Renombrar playlist\n";
-            std::cout << "3. Eliminar playlist\n";
-            std::cout << "4. Ver contenido de playlist\n";
-            std::cout << "5. Reproducir playlist\n";
-            std::cout << "6. Encolar playlist\n";
-            std::cout << "0. Volver al menú principal\n";
-            std::cout << "\nSeleccione una opción: ";
-            
-            int opcion = leerOpcion();
-            
-            switch (opcion) {
-                case 1: {
-                    std::cout << "Ingrese el nombre de la nueva playlist: ";
-                    std::string nombre;
-                    std::cin.ignore();
-                    std::getline(std::cin, nombre);
-                    
-                    if (biblioteca->crearPlaylist(nombre)) {
-                        std::cout << "Playlist creada correctamente." << std::endl;
-                    } else {
-                        std::cout << "Error al crear la playlist. El nombre ya existe." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 2: {
-                    if (biblioteca->obtenerNumeroPlaylists() == 0) {
-                        std::cout << "No hay playlists disponibles." << std::endl;
-                        pausar();
-                        break;
-                    }
-                    
-                    std::cout << "Ingrese el número de la playlist a renombrar: ";
-                    int numPlaylist = leerOpcion();
-                    
-                    if (numPlaylist >= 0 && numPlaylist < biblioteca->obtenerNumeroPlaylists()) {
-                        std::cout << "Ingrese el nuevo nombre: ";
-                        std::string nombre;
-                        std::cin.ignore();
-                        std::getline(std::cin, nombre);
-                        
-                        if (biblioteca->renombrarPlaylist(numPlaylist, nombre)) {
-                            std::cout << "Playlist renombrada correctamente." << std::endl;
-                        } else {
-                            std::cout << "Error al renombrar la playlist." << std::endl;
-                        }
-                    } else {
-                        std::cout << "Número de playlist inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 3: {
-                    if (biblioteca->obtenerNumeroPlaylists() == 0) {
-                        std::cout << "No hay playlists disponibles." << std::endl;
-                        pausar();
-                        break;
-                    }
-                    
-                    std::cout << "Ingrese el número de la playlist a eliminar: ";
-                    int numPlaylist = leerOpcion();
-                    
-                    if (numPlaylist >= 0 && numPlaylist < biblioteca->obtenerNumeroPlaylists()) {
-                        if (biblioteca->eliminarPlaylist(numPlaylist)) {
-                            std::cout << "Playlist eliminada correctamente." << std::endl;
-                        } else {
-                            std::cout << "Error al eliminar la playlist." << std::endl;
-                        }
-                    } else {
-                        std::cout << "Número de playlist inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 4: {
-                    if (biblioteca->obtenerNumeroPlaylists() == 0) {
-                        std::cout << "No hay playlists disponibles." << std::endl;
-                        pausar();
-                        break;
-                    }
-                    
-                    std::cout << "Ingrese el número de la playlist a ver: ";
-                    int numPlaylist = leerOpcion();
-                    
-                    if (numPlaylist >= 0 && numPlaylist < biblioteca->obtenerNumeroPlaylists()) {
-                        mostrarContenidoPlaylist(numPlaylist);
-                    } else {
-                        std::cout << "Número de playlist inválido." << std::endl;
-                        pausar();
-                    }
-                    
-                    break;
-                }
-                case 5: {
-                    if (biblioteca->obtenerNumeroPlaylists() == 0) {
-                        std::cout << "No hay playlists disponibles." << std::endl;
-                        pausar();
-                        break;
-                    }
-                    
-                    std::cout << "Ingrese el número de la playlist a reproducir: ";
-                    int numPlaylist = leerOpcion();
-                    
-                    if (numPlaylist >= 0 && numPlaylist < biblioteca->obtenerNumeroPlaylists()) {
-                        Playlist playlist;
-                        biblioteca->obtenerPlaylist(numPlaylist, playlist);
-                        
-                        if (playlist.obtenerNumeroCanciones() > 0) {
-                            reproductor->reproducirDePlaylist(numPlaylist, 0);
-                            std::cout << "Reproduciendo primera canción de la playlist..." << std::endl;
-                        } else {
-                            std::cout << "La playlist está vacía." << std::endl;
-                        }
-                    } else {
-                        std::cout << "Número de playlist inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 6: {
-                    if (biblioteca->obtenerNumeroPlaylists() == 0) {
-                        std::cout << "No hay playlists disponibles." << std::endl;
-                        pausar();
-                        break;
-                    }
-                    
-                    std::cout << "Ingrese el número de la playlist a encolar: ";
-                    int numPlaylist = leerOpcion();
-                    
-                    if (numPlaylist >= 0 && numPlaylist < biblioteca->obtenerNumeroPlaylists()) {
-                        reproductor->encolarPlaylist(numPlaylist);
-                        std::cout << "Playlist encolada." << std::endl;
-                    } else {
-                        std::cout << "Número de playlist inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 0:
-                    regresarMenuPrincipal = true;
-                    break;
-                default:
-                    std::cout << "Opción inválida. Intente de nuevo." << std::endl;
-                    pausar();
-            }
-        }
-    }
-    
-    /**
-     * @brief Muestra el menú de reproducción
-     */
-    void menuReproduccion() {
-        bool regresarMenuPrincipal = false;
-        
-        while (!regresarMenuPrincipal) {
-            limpiarPantalla();
-            mostrarCabecera("REPRODUCCIÓN");
-            
-            // Mostrar información de reproducción actual
-            mostrarInfoReproduccion();
-            
-            // Mostrar cola de reproducción
-            mostrarColaReproduccion();
-            
-            std::cout << "\nOPCIONES DE REPRODUCCIÓN\n";
-            std::cout << "1. Reproducir/Pausar\n";
-            std::cout << "2. Detener\n";
-            std::cout << "3. Siguiente\n";
-            std::cout << "4. Anterior\n";
-            std::cout << "5. Ajustar volumen\n";
-            std::cout << "6. Ajustar posición\n";
-            std::cout << "7. Vaciar cola\n";
-            std::cout << "8. Ver recomendaciones\n";
-            std::cout << "0. Volver al menú principal\n";
-            std::cout << "\nSeleccione una opción: ";
-            
-            int opcion = leerOpcion();
-            
-            switch (opcion) {
-                case 1: {
-                    if (reproductor->obtenerCancionActual()) {
-                        reproductor->pausarReanudar();
-                        std::cout << (reproductor->estaPausado() ? "Pausado." : "Reproduciendo.") << std::endl;
-                    } else {
-                        std::cout << "No hay canción en reproducción." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 2: {
-                    if (reproductor->obtenerCancionActual()) {
-                        reproductor->detener();
-                        std::cout << "Reproducción detenida." << std::endl;
-                    } else {
-                        std::cout << "No hay canción en reproducción." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 3: {
-                    if (reproductor->siguiente()) {
-                        std::cout << "Reproduciendo siguiente canción." << std::endl;
-                    } else {
-                        std::cout << "No hay más canciones en la cola." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 4: {
-                    if (reproductor->anterior()) {
-                        std::cout << "Reproduciendo canción anterior." << std::endl;
-                    } else {
-                        std::cout << "No hay canciones anteriores en el historial." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 5: {
-                    std::cout << "Volumen actual: " << reproductor->obtenerVolumen() << std::endl;
-                    std::cout << "Ingrese el nuevo volumen (0-100): ";
-                    int volumen = leerOpcion();
-                    
-                    if (reproductor->establecerVolumen(volumen)) {
-                        std::cout << "Volumen ajustado a " << volumen << "." << std::endl;
-                    } else {
-                        std::cout << "Valor de volumen inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 6: {
-                    if (!reproductor->obtenerCancionActual()) {
-                        std::cout << "No hay canción en reproducción." << std::endl;
-                        pausar();
-                        break;
-                    }
-                    
-                    int duracion = reproductor->obtenerCancionActual()->obtenerDuracionSegundos();
-                    std::cout << "Posición actual: " << reproductor->obtenerPosicionActual() 
-                              << " / " << duracion << " segundos" << std::endl;
-                    
-                    std::cout << "Ingrese la nueva posición (0-" << duracion << "): ";
-                    int posicion = leerOpcion();
-                    
-                    if (reproductor->establecerPosicion(posicion)) {
-                        std::cout << "Posición ajustada a " << posicion << " segundos." << std::endl;
-                    } else {
-                        std::cout << "Valor de posición inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 7: {
-                    reproductor->vaciarCola();
-                    std::cout << "Cola de reproducción vaciada." << std::endl;
-                    pausar();
-                    break;
-                }
-                case 8: {
-                    mostrarRecomendaciones();
-                    break;
-                }
-                case 0:
-                    regresarMenuPrincipal = true;
-                    break;
-                default:
-                    std::cout << "Opción inválida. Intente de nuevo." << std::endl;
-                    pausar();
-            }
-        }
-    }
-    
-    /**
-     * @brief Muestra el menú de búsqueda
-     */
-    void menuBusqueda() {
-        bool regresarMenuPrincipal = false;
-        
-        while (!regresarMenuPrincipal) {
-            limpiarPantalla();
-            mostrarCabecera("BÚSQUEDA");
-            
-            // Mostrar información de reproducción actual
-            mostrarInfoReproduccion();
-            
-            std::cout << "\nOPCIONES DE BÚSQUEDA\n";
-            std::cout << "1. Buscar por título\n";
-            std::cout << "2. Buscar por artista\n";
-            std::cout << "3. Buscar por álbum\n";
-            std::cout << "4. Buscar por género\n";
-            std::cout << "0. Volver al menú principal\n";
-            std::cout << "\nSeleccione una opción: ";
-            
-            int opcion = leerOpcion();
-            
-            switch (opcion) {
-                case 1: {
-                    std::cout << "Ingrese el título a buscar: ";
-                    std::string titulo;
-                    std::cin.ignore();
-                    std::getline(std::cin, titulo);
-                    
-                    Lista<int> resultados = biblioteca->buscarCancionesPorTitulo(titulo);
-                    mostrarResultadosBusqueda(resultados);
-                    break;
-                }
-                case 2: {
-                    std::cout << "Ingrese el artista a buscar: ";
-                    std::string artista;
-                    std::cin.ignore();
-                    std::getline(std::cin, artista);
-                    
-                    Lista<int> resultados = biblioteca->buscarCancionesPorArtista(artista);
-                    mostrarResultadosBusqueda(resultados);
-                    break;
-                }
-                case 3: {
-                    std::cout << "Ingrese el álbum a buscar: ";
-                    std::string album;
-                    std::cin.ignore();
-                    std::getline(std::cin, album);
-                    
-                    Lista<int> resultados = biblioteca->buscarCancionesPorAlbum(album);
-                    mostrarResultadosBusqueda(resultados);
-                    break;
-                }
-                case 4: {
-                    std::cout << "Ingrese el género a buscar: ";
-                    std::string genero;
-                    std::cin.ignore();
-                    std::getline(std::cin, genero);
-                    
-                    Lista<int> resultados = biblioteca->buscarCancionesPorGenero(genero);
-                    mostrarResultadosBusqueda(resultados);
-                    break;
-                }
-                case 0:
-                    regresarMenuPrincipal = true;
-                    break;
-                default:
-                    std::cout << "Opción inválida. Intente de nuevo." << std::endl;
-                    pausar();
-            }
-        }
-    }
-    
-    /**
-     * @brief Muestra el menú de ordenamiento
-     */
-    void menuOrdenamiento() {
-        bool regresarMenuPrincipal = false;
-        
-        while (!regresarMenuPrincipal) {
-            limpiarPantalla();
-            mostrarCabecera("ORDENAMIENTO");
-            
-            // Mostrar información de reproducción actual
-            mostrarInfoReproduccion();
-            
-            std::cout << "\nOPCIONES DE ORDENAMIENTO\n";
-            std::cout << "1. Ordenar por título (Bubble Sort)\n";
-            std::cout << "2. Ordenar por título (Insertion Sort)\n";
-            std::cout << "3. Ordenar por título (Quick Sort)\n";
-            std::cout << "4. Ordenar por título (Merge Sort)\n";
-            std::cout << "0. Volver al menú principal\n";
-            std::cout << "\nSeleccione una opción: ";
-            
-            int opcion = leerOpcion();
-            
-            switch (opcion) {
-                case 1: {
-                    std::cout << "Ordenando por título (Bubble Sort)..." << std::endl;
-                    biblioteca->ordenarCancionesPorTitulo(true, 1);
-                    std::cout << "Ordenamiento completado." << std::endl;
-                    pausar();
-                    break;
-                }
-                case 2: {
-                    std::cout << "Ordenando por título (Insertion Sort)..." << std::endl;
-                    biblioteca->ordenarCancionesPorTitulo(true, 2);
-                    std::cout << "Ordenamiento completado." << std::endl;
-                    pausar();
-                    break;
-                }
-                case 3: {
-                    std::cout << "Ordenando por título (Quick Sort)..." << std::endl;
-                    biblioteca->ordenarCancionesPorTitulo(true, 3);
-                    std::cout << "Ordenamiento completado." << std::endl;
-                    pausar();
-                    break;
-                }
-                case 4: {
-                    std::cout << "Ordenando por título (Merge Sort)..." << std::endl;
-                    biblioteca->ordenarCancionesPorTitulo(true, 4);
-                    std::cout << "Ordenamiento completado." << std::endl;
-                    pausar();
-                    break;
-                }
-                case 0:
-                    regresarMenuPrincipal = true;
-                    break;
-                default:
-                    std::cout << "Opción inválida. Intente de nuevo." << std::endl;
-                    pausar();
-            }
-        }
-    }
-    
-    /**
-     * @brief Muestra las canciones de la biblioteca
-     */
-    void mostrarCanciones() const {
-        int numCanciones = biblioteca->obtenerNumeroCanciones();
-        
-        if (numCanciones == 0) {
-            std::cout << "\nNo hay canciones en la biblioteca." << std::endl;
-            return;
-        }
-        
-        std::cout << "\nCANCIONES EN LA BIBLIOTECA (" << numCanciones << ")\n";
-        std::cout << std::setw(5) << "ID" << " | "
-                  << std::setw(30) << "TÍTULO" << " | "
-                  << std::setw(20) << "ARTISTA" << " | "
-                  << std::setw(20) << "ÁLBUM" << " | "
-                  << std::setw(5) << "AÑO" << " | "
-                  << std::setw(8) << "DURACIÓN" << std::endl;
-        std::cout << std::string(95, '-') << std::endl;
-        
-        for (int i = 0; i < numCanciones; i++) {
-            Cancion cancion;
-            biblioteca->obtenerCancion(i, cancion);
-            
-            std::cout << std::setw(5) << i << " | "
-                      << std::setw(30) << (cancion.obtenerTitulo().length() > 27 ? 
-                                          cancion.obtenerTitulo().substr(0, 27) + "..." : 
-                                          cancion.obtenerTitulo()) << " | "
-                      << std::setw(20) << (cancion.obtenerArtista().length() > 17 ? 
-                                          cancion.obtenerArtista().substr(0, 17) + "..." : 
-                                          cancion.obtenerArtista()) << " | "
-                      << std::setw(20) << (cancion.obtenerAlbum().length() > 17 ? 
-                                          cancion.obtenerAlbum().substr(0, 17) + "..." : 
-                                          cancion.obtenerAlbum()) << " | "
-                      << std::setw(5) << cancion.obtenerAnio() << " | "
-                      << std::setw(8) << cancion.obtenerDuracionFormateada() << std::endl;
-        }
-    }
-    
-    /**
-     * @brief Muestra las playlists
-     */
-    void mostrarPlaylists() const {
-        int numPlaylists = biblioteca->obtenerNumeroPlaylists();
-        
-        if (numPlaylists == 0) {
-            std::cout << "\nNo hay playlists." << std::endl;
-            return;
-        }
-        
-        std::cout << "\nPLAYLISTS (" << numPlaylists << ")\n";
-        std::cout << std::setw(5) << "ID" << " | "
-                  << std::setw(30) << "NOMBRE" << " | "
-                  << std::setw(15) << "CANCIONES" << " | "
-                  << std::setw(10) << "DURACIÓN" << std::endl;
-        std::cout << std::string(65, '-') << std::endl;
-        
-        for (int i = 0; i < numPlaylists; i++) {
-            Playlist playlist;
-            biblioteca->obtenerPlaylist(i, playlist);
-            
-            std::cout << std::setw(5) << i << " | "
-                      << std::setw(30) << (playlist.obtenerNombre().length() > 27 ? 
-                                          playlist.obtenerNombre().substr(0, 27) + "..." : 
-                                          playlist.obtenerNombre()) << " | "
-                      << std::setw(15) << playlist.obtenerNumeroCanciones() << " | "
-                      << std::setw(10) << playlist.obtenerDuracionTotalFormateada() << std::endl;
-        }
-    }
-    
-    /**
-     * @brief Muestra el contenido de una playlist
-     * @param posicion Posición de la playlist
-     */
-    void mostrarContenidoPlaylist(int posicion) {
-        Playlist playlist;
-        if (!biblioteca->obtenerPlaylist(posicion, playlist)) {
-            std::cout << "Error al obtener la playlist." << std::endl;
-            pausar();
-            return;
-        }
-        
-        bool regresarMenuPlaylists = false;
-        
-        while (!regresarMenuPlaylists) {
-            limpiarPantalla();
-            mostrarCabecera("PLAYLIST: " + playlist.obtenerNombre());
-            
-            int numCanciones = playlist.obtenerNumeroCanciones();
-            
-            if (numCanciones == 0) {
-                std::cout << "\nNo hay canciones en esta playlist." << std::endl;
+        if (biblioteca.obtenerCancionActual() != -1) {
+            Cancion cancionActual = biblioteca.obtenerCancion(biblioteca.obtenerCancionActual());
+            std::cout << "Reproduciendo: " << cancionActual.titulo << " - " << cancionActual.artista;
+            if (biblioteca.estaReproduciendo()) {
+                std::cout << " [▶]";
             } else {
-                std::cout << "\nCANCIONES EN LA PLAYLIST (" << numCanciones << ")\n";
-                std::cout << std::setw(5) << "ID" << " | "
-                          << std::setw(30) << "TÍTULO" << " | "
-                          << std::setw(20) << "ARTISTA" << " | "
-                          << std::setw(20) << "ÁLBUM" << " | "
-                          << std::setw(8) << "DURACIÓN" << std::endl;
-                std::cout << std::string(85, '-') << std::endl;
-                
-                for (int i = 0; i < numCanciones; i++) {
-                    Cancion cancion;
-                    playlist.obtenerCancion(i, cancion);
-                    
-                    std::cout << std::setw(5) << i << " | "
-                              << std::setw(30) << (cancion.obtenerTitulo().length() > 27 ? 
-                                                  cancion.obtenerTitulo().substr(0, 27) + "..." : 
-                                                  cancion.obtenerTitulo()) << " | "
-                              << std::setw(20) << (cancion.obtenerArtista().length() > 17 ? 
-                                                  cancion.obtenerArtista().substr(0, 17) + "..." : 
-                                                  cancion.obtenerArtista()) << " | "
-                              << std::setw(20) << (cancion.obtenerAlbum().length() > 17 ? 
-                                                  cancion.obtenerAlbum().substr(0, 17) + "..." : 
-                                                  cancion.obtenerAlbum()) << " | "
-                              << std::setw(8) << cancion.obtenerDuracionFormateada() << std::endl;
-                }
+                std::cout << " [⏸]";
             }
-            
-            std::cout << "\nOPCIONES DE PLAYLIST\n";
-            std::cout << "1. Reproducir canción\n";
-            std::cout << "2. Eliminar canción\n";
-            std::cout << "0. Volver al menú de playlists\n";
-            std::cout << "\nSeleccione una opción: ";
-            
-            int opcion = leerOpcion();
-            
-            switch (opcion) {
-                case 1: {
-                    if (numCanciones == 0) {
-                        std::cout << "No hay canciones para reproducir." << std::endl;
-                        pausar();
-                        break;
-                    }
-                    
-                    std::cout << "Ingrese el número de la canción a reproducir: ";
-                    int numCancion = leerOpcion();
-                    
-                    if (numCancion >= 0 && numCancion < numCanciones) {
-                        reproductor->reproducirDePlaylist(posicion, numCancion);
-                        std::cout << "Reproduciendo canción..." << std::endl;
-                    } else {
-                        std::cout << "Número de canción inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 2: {
-                    if (numCanciones == 0) {
-                        std::cout << "No hay canciones para eliminar." << std::endl;
-                        pausar();
-                        break;
-                    }
-                    
-                    std::cout << "Ingrese el número de la canción a eliminar: ";
-                    int numCancion = leerOpcion();
-                    
-                    if (numCancion >= 0 && numCancion < numCanciones) {
-                        if (biblioteca->eliminarCancionDePlaylist(posicion, numCancion)) {
-                            std::cout << "Canción eliminada de la playlist." << std::endl;
-                        } else {
-                            std::cout << "Error al eliminar la canción." << std::endl;
-                        }
-                    } else {
-                        std::cout << "Número de canción inválido." << std::endl;
-                    }
-                    
-                    pausar();
-                    break;
-                }
-                case 0:
-                    regresarMenuPlaylists = true;
-                    break;
-                default:
-                    std::cout << "Opción inválida. Intente de nuevo." << std::endl;
-                    pausar();
-            }
+            std::cout << std::endl;
+            std::cout << UTF8Util::formatearLinea(80) << std::endl;
         }
+        
+        std::cout << "1. Ver biblioteca de canciones" << std::endl;
+        std::cout << "2. Ver listas de reproducción" << std::endl;
+        std::cout << "3. Buscar canciones" << std::endl;
+        std::cout << "4. Reproducir canción" << std::endl;
+        std::cout << "5. Control de reproducción" << std::endl;
+        std::cout << "6. Ver cola de reproducción" << std::endl;
+        std::cout << "7. Ver historial" << std::endl;
+        std::cout << "8. Obtener recomendaciones" << std::endl;
+        std::cout << "0. Salir" << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Ingrese una opción: ";
     }
     
-    /**
-     * @brief Muestra la información de reproducción actual
-     */
-    void mostrarInfoReproduccion() const {
-        const Cancion* cancionActual = reproductor->obtenerCancionActual();
-        
-        std::cout << "\nREPRODUCCIÓN ACTUAL\n";
-        
-        if (cancionActual) {
-            std::cout << "Título: " << cancionActual->obtenerTitulo() << std::endl;
-            std::cout << "Artista: " << cancionActual->obtenerArtista() << std::endl;
-            std::cout << "Estado: " << (reproductor->estaReproduciendo() ? "Reproduciendo" : 
-                                      (reproductor->estaPausado() ? "Pausado" : "Detenido")) << std::endl;
-            std::cout << "Volumen: " << reproductor->obtenerVolumen() << "%" << std::endl;
-            std::cout << "Posición: " << reproductor->obtenerPosicionActual() << " / " 
-                      << cancionActual->obtenerDuracionSegundos() << " segundos" << std::endl;
-        } else {
-            std::cout << "No hay canción en reproducción." << std::endl;
-        }
-        
-        std::cout << "Cola: " << reproductor->obtenerTamanoCola() << " canciones" << std::endl;
-        std::cout << "Historial: " << reproductor->obtenerTamanoHistorial() << " canciones" << std::endl;
-    }
-    
-    /**
-     * @brief Muestra la cola de reproducción
-     */
-    void mostrarColaReproduccion() const {
-        int tamanoCola = reproductor->obtenerTamanoCola();
-        
-        if (tamanoCola == 0) {
-            std::cout << "\nNo hay canciones en la cola de reproducción." << std::endl;
-            return;
-        }
-        
-        std::cout << "\nCOLA DE REPRODUCCIÓN (" << tamanoCola << " canciones)\n";
-        // Nota: No podemos mostrar el contenido de la cola directamente
-        // porque no tenemos acceso a los elementos internos de la cola
-        // desde esta clase. En una implementación real, podríamos agregar
-        // un método en ReproductorMusica para obtener una copia de la cola.
-    }
-    
-    /**
-     * @brief Muestra las recomendaciones basadas en la canción actual
-     */
-    void mostrarRecomendaciones() {
-        const Cancion* cancionActual = reproductor->obtenerCancionActual();
-        
-        if (!cancionActual) {
-            std::cout << "No hay canción actual para generar recomendaciones." << std::endl;
-            pausar();
-            return;
-        }
-        
-        // Buscar la canción actual en la biblioteca
-        int posicionCancion = -1;
-        for (int i = 0; i < biblioteca->obtenerNumeroCanciones(); i++) {
-            Cancion cancion;
-            biblioteca->obtenerCancion(i, cancion);
-            
-            if (cancion.obtenerTitulo() == cancionActual->obtenerTitulo() &&
-                cancion.obtenerArtista() == cancionActual->obtenerArtista()) {
-                posicionCancion = i;
-                break;
-            }
-        }
-        
-        if (posicionCancion == -1) {
-            std::cout << "No se encontró la canción actual en la biblioteca." << std::endl;
-            pausar();
-            return;
-        }
-        
-        Lista<int> recomendaciones = biblioteca->obtenerRecomendaciones(posicionCancion, 5);
-        
-        if (recomendaciones.estaVacia()) {
-            std::cout << "No hay recomendaciones disponibles." << std::endl;
-            pausar();
-            return;
-        }
-        
-        limpiarPantalla();
-        mostrarCabecera("RECOMENDACIONES");
-        
-        std::cout << "\nBasado en: " << cancionActual->obtenerTitulo() 
-                  << " - " << cancionActual->obtenerArtista() << std::endl;
-        
-        std::cout << "\nCANCIONES RECOMENDADAS\n";
-        std::cout << std::setw(5) << "ID" << " | "
-                  << std::setw(30) << "TÍTULO" << " | "
-                  << std::setw(20) << "ARTISTA" << " | "
-                  << std::setw(20) << "ÁLBUM" << std::endl;
-        std::cout << std::string(80, '-') << std::endl;
-        
-        for (auto it = recomendaciones.inicio(); it != recomendaciones.fin(); ++it) {
-            int indice = *it;
-            Cancion cancion;
-            biblioteca->obtenerCancion(indice, cancion);
-            
-            std::cout << std::setw(5) << indice << " | "
-                      << std::setw(30) << (cancion.obtenerTitulo().length() > 27 ? 
-                                          cancion.obtenerTitulo().substr(0, 27) + "..." : 
-                                          cancion.obtenerTitulo()) << " | "
-                      << std::setw(20) << (cancion.obtenerArtista().length() > 17 ? 
-                                          cancion.obtenerArtista().substr(0, 17) + "..." : 
-                                          cancion.obtenerArtista()) << " | "
-                      << std::setw(20) << (cancion.obtenerAlbum().length() > 17 ? 
-                                          cancion.obtenerAlbum().substr(0, 17) + "..." : 
-                                          cancion.obtenerAlbum()) << std::endl;
-        }
-        
-        std::cout << "\nOPCIONES\n";
-        std::cout << "1. Reproducir una recomendación\n";
-        std::cout << "2. Encolar una recomendación\n";
-        std::cout << "0. Volver\n";
-        std::cout << "\nSeleccione una opción: ";
-        
-        int opcion = leerOpcion();
-        
-        switch (opcion) {
-            case 1: {
-                std::cout << "Ingrese el ID de la canción a reproducir: ";
-                int id = leerOpcion();
-                
-                bool encontrado = false;
-                for (auto it = recomendaciones.inicio(); it != recomendaciones.fin(); ++it) {
-                    if (*it == id) {
-                        encontrado = true;
-                        break;
-                    }
-                }
-                
-                if (encontrado) {
-                    reproductor->reproducir(id);
-                    std::cout << "Reproduciendo canción recomendada..." << std::endl;
-                } else {
-                    std::cout << "ID no válido." << std::endl;
-                }
-                
-                pausar();
-                break;
-            }
-            case 2: {
-                std::cout << "Ingrese el ID de la canción a encolar: ";
-                int id = leerOpcion();
-                
-                bool encontrado = false;
-                for (auto it = recomendaciones.inicio(); it != recomendaciones.fin(); ++it) {
-                    if (*it == id) {
-                        encontrado = true;
-                        break;
-                    }
-                }
-                
-                if (encontrado) {
-                    reproductor->encolarCancion(id);
-                    std::cout << "Canción recomendada encolada." << std::endl;
-                } else {
-                    std::cout << "ID no válido." << std::endl;
-                }
-                
-                pausar();
-                break;
-            }
-            case 0:
-                break;
-            default:
-                std::cout << "Opción inválida." << std::endl;
-                pausar();
-        }
-    }
-    
-    /**
-     * @brief Muestra los resultados de una búsqueda
-     * @param resultados Lista con las posiciones de las canciones encontradas
-     */
-    void mostrarResultadosBusqueda(const Lista<int>& resultados) {
-        if (resultados.estaVacia()) {
-            std::cout << "No se encontraron resultados." << std::endl;
-            pausar();
-            return;
-        }
-        
-        limpiarPantalla();
-        mostrarCabecera("RESULTADOS DE BÚSQUEDA");
-        
-        std::cout << "\nCANCIONES ENCONTRADAS (" << resultados.obtenerTamano() << ")\n";
-        std::cout << std::setw(5) << "ID" << " | "
-                  << std::setw(30) << "TÍTULO" << " | "
-                  << std::setw(20) << "ARTISTA" << " | "
-                  << std::setw(20) << "ÁLBUM" << std::endl;
-        std::cout << std::string(80, '-') << std::endl;
-        
-        for (auto it = resultados.inicio(); it != resultados.fin(); ++it) {
-            int indice = *it;
-            Cancion cancion;
-            biblioteca->obtenerCancion(indice, cancion);
-            
-            std::cout << std::setw(5) << indice << " | "
-                      << std::setw(30) << (cancion.obtenerTitulo().length() > 27 ? 
-                                          cancion.obtenerTitulo().substr(0, 27) + "..." : 
-                                          cancion.obtenerTitulo()) << " | "
-                      << std::setw(20) << (cancion.obtenerArtista().length() > 17 ? 
-                                          cancion.obtenerArtista().substr(0, 17) + "..." : 
-                                          cancion.obtenerArtista()) << " | "
-                      << std::setw(20) << (cancion.obtenerAlbum().length() > 17 ? 
-                                          cancion.obtenerAlbum().substr(0, 17) + "..." : 
-                                          cancion.obtenerAlbum()) << std::endl;
-        }
-        
-        std::cout << "\nOPCIONES\n";
-        std::cout << "1. Reproducir una canción\n";
-        std::cout << "2. Encolar una canción\n";
-        std::cout << "0. Volver\n";
-        std::cout << "\nSeleccione una opción: ";
-        
-        int opcion = leerOpcion();
-        
-        switch (opcion) {
-            case 1: {
-                std::cout << "Ingrese el ID de la canción a reproducir: ";
-                int id = leerOpcion();
-                
-                bool encontrado = false;
-                for (auto it = resultados.inicio(); it != resultados.fin(); ++it) {
-                    if (*it == id) {
-                        encontrado = true;
-                        break;
-                    }
-                }
-                
-                if (encontrado) {
-                    reproductor->reproducir(id);
-                    std::cout << "Reproduciendo canción..." << std::endl;
-                } else {
-                    std::cout << "ID no válido." << std::endl;
-                }
-                
-                pausar();
-                break;
-            }
-            case 2: {
-                std::cout << "Ingrese el ID de la canción a encolar: ";
-                int id = leerOpcion();
-                
-                bool encontrado = false;
-                for (auto it = resultados.inicio(); it != resultados.fin(); ++it) {
-                    if (*it == id) {
-                        encontrado = true;
-                        break;
-                    }
-                }
-                
-                if (encontrado) {
-                    reproductor->encolarCancion(id);
-                    std::cout << "Canción encolada." << std::endl;
-                } else {
-                    std::cout << "ID no válido." << std::endl;
-                }
-                
-                pausar();
-                break;
-            }
-            case 0:
-                break;
-            default:
-                std::cout << "Opción inválida." << std::endl;
-                pausar();
-        }
-    }
-    
-    /**
-     * @brief Muestra una cabecera con un título
-     * @param titulo Título de la cabecera
-     */
-    void mostrarCabecera(const std::string& titulo) const {
-        int ancho = 80;
-        int espacios = (ancho - titulo.length()) / 2;
-        
-        std::cout << std::string(ancho, '=') << std::endl;
-        std::cout << std::string(espacios, ' ') << titulo << std::endl;
-        std::cout << std::string(ancho, '=') << std::endl;
-    }
-    
-    /**
-     * @brief Lee una opción del usuario
-     * @return Opción leída
-     */
-    int leerOpcion() const {
+    int leerOpcion() {
         int opcion;
         std::cin >> opcion;
-        
-        // Limpiar el buffer de entrada
-        if (std::cin.fail()) {
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            return -1;
-        }
-        
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         return opcion;
     }
     
-    /**
-     * @brief Pausa la ejecución hasta que el usuario presione Enter
-     */
-    void pausar() const {
-        std::cout << "\nPresione Enter para continuar...";
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cin.get();
-    }
-    
-    /**
-     * @brief Limpia la pantalla de la consola
-     */
-    void limpiarPantalla() const {
+    void limpiarPantalla() {
         #ifdef _WIN32
             system("cls");
         #else
             system("clear");
         #endif
+    }
+    
+    void mostrarBiblioteca() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("BIBLIOTECA DE CANCIONES") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        if (biblioteca.obtenerNumCanciones() == 0) {
+            std::cout << "La biblioteca está vacía." << std::endl;
+            return;
+        }
+        
+        std::cout << "Ordenar por:" << std::endl;
+        std::cout << "1. Título" << std::endl;
+        std::cout << "2. Artista" << std::endl;
+        std::cout << "3. Álbum" << std::endl;
+        std::cout << "4. Año" << std::endl;
+        std::cout << "0. Volver sin ordenar" << std::endl;
+        std::cout << "Ingrese una opción: ";
+        
+        int opcionOrden = leerOpcion();
+        bool ascendente = true;
+        
+        if (opcionOrden >= 1 && opcionOrden <= 4) {
+            std::cout << "Orden:" << std::endl;
+            std::cout << "1. Ascendente" << std::endl;
+            std::cout << "2. Descendente" << std::endl;
+            std::cout << "Ingrese una opción: ";
+            
+            int opcionDireccion = leerOpcion();
+            ascendente = (opcionDireccion != 2);
+            
+            switch (opcionOrden) {
+                case 1:
+                    biblioteca.ordenarPorTitulo(ascendente);
+                    break;
+                case 2:
+                    biblioteca.ordenarPorArtista(ascendente);
+                    break;
+                case 3:
+                    biblioteca.ordenarPorAlbum(ascendente);
+                    break;
+                case 4:
+                    biblioteca.ordenarPorAnio(ascendente);
+                    break;
+            }
+        }
+        
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("BIBLIOTECA DE CANCIONES") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar encabezados de columnas
+        std::cout << UTF8Util::formatearTexto("Índice", 8) << " | ";
+        std::cout << UTF8Util::formatearTexto("Título", 30) << " | ";
+        std::cout << UTF8Util::formatearTexto("Artista", 20) << " | ";
+        std::cout << UTF8Util::formatearTexto("Álbum", 20) << " | ";
+        std::cout << UTF8Util::formatearTexto("Año", 6) << " | ";
+        std::cout << UTF8Util::formatearTexto("Duración", 10) << std::endl;
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar canciones
+        for (int i = 0; i < biblioteca.obtenerNumCanciones(); i++) {
+            Cancion cancion = biblioteca.obtenerCancion(i);
+            
+            std::cout << UTF8Util::formatearTexto(std::to_string(i), 8) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.titulo, 30) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.artista, 20) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.album, 20) << " | ";
+            std::cout << UTF8Util::formatearTexto(std::to_string(cancion.anio), 6) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.obtenerDuracionFormateada(), 10) << std::endl;
+        }
+    }
+    
+    void mostrarListasReproduccion() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("LISTAS DE REPRODUCCI" + UTF8Util::O_ACENTO() + "N") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        if (biblioteca.obtenerNumListasReproduccion() == 0) {
+            std::cout << "No hay listas de reproducción." << std::endl;
+            return;
+        }
+        
+        // Mostrar listas de reproducción
+        for (int i = 0; i < biblioteca.obtenerNumListasReproduccion(); i++) {
+            ListaReproduccion lista = biblioteca.obtenerListaReproduccion(i);
+            
+            std::cout << i << ". " << lista.nombre << " (" << lista.obtenerNumCanciones() << " canciones)" << std::endl;
+        }
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Ingrese el índice de la lista para ver su contenido (o -1 para volver): ";
+        
+        int indice = leerOpcion();
+        
+        if (indice >= 0 && indice < biblioteca.obtenerNumListasReproduccion()) {
+            mostrarContenidoLista(indice);
+        }
+    }
+    
+    void mostrarContenidoLista(int indiceLista) {
+        limpiarPantalla();
+        ListaReproduccion lista = biblioteca.obtenerListaReproduccion(indiceLista);
+        
+        std::cout << UTF8Util::formatearTitulo("LISTA: " + lista.nombre) << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        if (lista.descripcion != "") {
+            std::cout << "Descripción: " << lista.descripcion << std::endl;
+            std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        }
+        
+        if (lista.obtenerNumCanciones() == 0) {
+            std::cout << "Esta lista está vacía." << std::endl;
+            return;
+        }
+        
+        // Mostrar encabezados de columnas
+        std::cout << UTF8Util::formatearTexto("Nº", 4) << " | ";
+        std::cout << UTF8Util::formatearTexto("Título", 30) << " | ";
+        std::cout << UTF8Util::formatearTexto("Artista", 20) << " | ";
+        std::cout << UTF8Util::formatearTexto("Álbum", 20) << std::endl;
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar canciones de la lista
+        for (int i = 0; i < lista.canciones.obtenerTamanio(); i++) {
+            int indiceCancion = lista.canciones.obtener(i);
+            Cancion cancion = biblioteca.obtenerCancion(indiceCancion);
+            
+            std::cout << UTF8Util::formatearTexto(std::to_string(i + 1), 4) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.titulo, 30) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.artista, 20) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.album, 20) << std::endl;
+        }
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Opciones:" << std::endl;
+        std::cout << "1. Reproducir lista" << std::endl;
+        std::cout << "2. Agregar canción a la lista" << std::endl;
+        std::cout << "3. Eliminar canción de la lista" << std::endl;
+        std::cout << "0. Volver" << std::endl;
+        std::cout << "Ingrese una opción: ";
+        
+        int opcion = leerOpcion();
+        
+        switch (opcion) {
+            case 1:
+                reproducirLista(indiceLista);
+                break;
+            case 2:
+                agregarCancionALista(indiceLista);
+                break;
+            case 3:
+                eliminarCancionDeLista(indiceLista);
+                break;
+        }
+    }
+    
+    void reproducirLista(int indiceLista) {
+        ListaReproduccion lista = biblioteca.obtenerListaReproduccion(indiceLista);
+        
+        if (lista.obtenerNumCanciones() == 0) {
+            std::cout << "Esta lista está vacía." << std::endl;
+            return;
+        }
+        
+        // Reproducir la primera canción
+        int indiceCancion = lista.canciones.obtener(0);
+        biblioteca.reproducir(indiceCancion);
+        
+        // Encolar el resto de canciones
+        for (int i = 1; i < lista.canciones.obtenerTamanio(); i++) {
+            indiceCancion = lista.canciones.obtener(i);
+            biblioteca.encolarCancion(indiceCancion);
+        }
+        
+        std::cout << "Reproduciendo lista: " << lista.nombre << std::endl;
+        mostrarReproduccionActual();
+    }
+    
+    void agregarCancionALista(int indiceLista) {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("AGREGAR CANCI" + UTF8Util::O_ACENTO() + "N A LISTA") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar canciones de la biblioteca
+        mostrarBiblioteca();
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Ingrese el índice de la canción a agregar: ";
+        
+        int indiceCancion = leerOpcion();
+        
+        if (indiceCancion >= 0 && indiceCancion < biblioteca.obtenerNumCanciones()) {
+            if (biblioteca.agregarCancionALista(indiceCancion, indiceLista)) {
+                std::cout << "Canción agregada a la lista." << std::endl;
+            } else {
+                std::cout << "La canción ya está en la lista." << std::endl;
+            }
+        } else {
+            std::cout << "Índice de canción inválido." << std::endl;
+        }
+    }
+    
+    void eliminarCancionDeLista(int indiceLista) {
+        limpiarPantalla();
+        ListaReproduccion lista = biblioteca.obtenerListaReproduccion(indiceLista);
+        
+        std::cout << UTF8Util::formatearTitulo("ELIMINAR CANCI" + UTF8Util::O_ACENTO() + "N DE LISTA") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        if (lista.obtenerNumCanciones() == 0) {
+            std::cout << "Esta lista está vacía." << std::endl;
+            return;
+        }
+        
+        // Mostrar canciones de la lista
+        for (int i = 0; i < lista.canciones.obtenerTamanio(); i++) {
+            int indiceCancion = lista.canciones.obtener(i);
+            Cancion cancion = biblioteca.obtenerCancion(indiceCancion);
+            
+            std::cout << i << ". " << cancion.titulo << " - " << cancion.artista << std::endl;
+        }
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Ingrese el índice de la canción a eliminar: ";
+        
+        int indice = leerOpcion();
+        
+        if (indice >= 0 && indice < lista.canciones.obtenerTamanio()) {
+            int indiceCancion = lista.canciones.obtener(indice);
+            
+            if (biblioteca.eliminarCancionDeLista(indiceCancion, indiceLista)) {
+                std::cout << "Canción eliminada de la lista." << std::endl;
+            } else {
+                std::cout << "Error al eliminar la canción." << std::endl;
+            }
+        } else {
+            std::cout << "Índice inválido." << std::endl;
+        }
+    }
+    
+    void buscarCanciones() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("BUSCAR CANCIONES") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        std::cout << "Buscar por:" << std::endl;
+        std::cout << "1. Título" << std::endl;
+        std::cout << "2. Artista" << std::endl;
+        std::cout << "3. Álbum" << std::endl;
+        std::cout << "4. Género" << std::endl;
+        std::cout << "0. Volver" << std::endl;
+        std::cout << "Ingrese una opción: ";
+        
+        int opcion = leerOpcion();
+        
+        if (opcion >= 1 && opcion <= 4) {
+            std::cout << "Ingrese el término de búsqueda: ";
+            std::string termino;
+            std::getline(std::cin, termino);
+            
+            Lista<int> resultados;
+            
+            switch (opcion) {
+                case 1:
+                    resultados = biblioteca.buscarCancionesPorTitulo(termino);
+                    break;
+                case 2:
+                    resultados = biblioteca.buscarCancionesPorArtista(termino);
+                    break;
+                case 3:
+                    resultados = biblioteca.buscarCancionesPorAlbum(termino);
+                    break;
+                case 4:
+                    resultados = biblioteca.buscarCancionesPorGenero(termino);
+                    break;
+            }
+            
+            mostrarResultadosBusqueda(resultados);
+        }
+    }
+    
+    void mostrarResultadosBusqueda(const Lista<int>& resultados) {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("RESULTADOS DE B" + UTF8Util::U_ACENTO() + "SQUEDA") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        if (resultados.obtenerTamanio() == 0) {
+            std::cout << "No se encontraron resultados." << std::endl;
+            return;
+        }
+        
+        std::cout << "Se encontraron " << resultados.obtenerTamanio() << " resultados:" << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar encabezados de columnas
+        std::cout << UTF8Util::formatearTexto("Índice", 8) << " | ";
+        std::cout << UTF8Util::formatearTexto("Título", 30) << " | ";
+        std::cout << UTF8Util::formatearTexto("Artista", 20) << " | ";
+        std::cout << UTF8Util::formatearTexto("Álbum", 20) << std::endl;
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar resultados
+        for (int i = 0; i < resultados.obtenerTamanio(); i++) {
+            int indice = resultados.obtener(i);
+            Cancion cancion = biblioteca.obtenerCancion(indice);
+            
+            std::cout << UTF8Util::formatearTexto(std::to_string(indice), 8) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.titulo, 30) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.artista, 20) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.album, 20) << std::endl;
+        }
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Opciones:" << std::endl;
+        std::cout << "1. Reproducir una canción" << std::endl;
+        std::cout << "2. Agregar una canción a la cola" << std::endl;
+        std::cout << "0. Volver" << std::endl;
+        std::cout << "Ingrese una opción: ";
+        
+        int opcion = leerOpcion();
+        
+        if (opcion == 1 || opcion == 2) {
+            std::cout << "Ingrese el índice de la canción: ";
+            int indice = leerOpcion();
+            
+            if (indice >= 0 && indice < biblioteca.obtenerNumCanciones()) {
+                if (opcion == 1) {
+                    biblioteca.reproducir(indice);
+                    std::cout << "Reproduciendo canción." << std::endl;
+                } else {
+                    biblioteca.encolarCancion(indice);
+                    std::cout << "Canción agregada a la cola." << std::endl;
+                }
+            } else {
+                std::cout << "Índice inválido." << std::endl;
+            }
+        }
+    }
+    
+    void reproducirCancion() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("REPRODUCIR CANCI" + UTF8Util::O_ACENTO() + "N") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar canciones de la biblioteca
+        mostrarBiblioteca();
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Ingrese el índice de la canción a reproducir: ";
+        
+        int indice = leerOpcion();
+        
+        if (indice >= 0 && indice < biblioteca.obtenerNumCanciones()) {
+            biblioteca.reproducir(indice);
+            std::cout << "Reproduciendo canción." << std::endl;
+            mostrarReproduccionActual();
+        } else {
+            std::cout << "Índice inválido." << std::endl;
+        }
+    }
+    
+    void mostrarReproduccionActual() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("REPRODUCCI" + UTF8Util::O_ACENTO() + "N ACTUAL") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        if (biblioteca.obtenerCancionActual() == -1) {
+            std::cout << "No hay ninguna canción reproduciéndose." << std::endl;
+            return;
+        }
+        
+        Cancion cancion = biblioteca.obtenerCancion(biblioteca.obtenerCancionActual());
+        
+        std::cout << "Título: " << cancion.titulo << std::endl;
+        std::cout << "Artista: " << cancion.artista << std::endl;
+        std::cout << "Álbum: " << cancion.album << std::endl;
+        std::cout << "Año: " << cancion.anio << std::endl;
+        std::cout << "Duración: " << cancion.obtenerDuracionFormateada() << std::endl;
+        
+        std::cout << "Géneros: ";
+        for (int i = 0; i < cancion.generos.obtenerTamanio(); i++) {
+            std::cout << cancion.generos.obtener(i);
+            if (i < cancion.generos.obtenerTamanio() - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << std::endl;
+        
+        std::cout << "Estado: " << (biblioteca.estaReproduciendo() ? "Reproduciendo" : "Pausado") << std::endl;
+        
+        // Simulación de barra de progreso
+        int duracionTotal = cancion.duracion;
+        int progreso = rand() % duracionTotal;
+        int porcentaje = (progreso * 100) / duracionTotal;
+        
+        std::cout << "\nProgreso: [";
+        for (int i = 0; i < 50; i++) {
+            if (i < (porcentaje / 2)) {
+                std::cout << "=";
+            } else if (i == (porcentaje / 2)) {
+                std::cout << ">";
+            } else {
+                std::cout << " ";
+            }
+        }
+        std::cout << "] " << porcentaje << "%" << std::endl;
+        
+        int minutos = progreso / 60;
+        int segundos = progreso % 60;
+        int minutosTotal = duracionTotal / 60;
+        int segundosTotal = duracionTotal % 60;
+        
+        printf("%02d:%02d / %02d:%02d\n", minutos, segundos, minutosTotal, segundosTotal);
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Controles:" << std::endl;
+        std::cout << "1. " << (biblioteca.estaReproduciendo() ? "Pausar" : "Reanudar") << std::endl;
+        std::cout << "2. Anterior" << std::endl;
+        std::cout << "3. Siguiente" << std::endl;
+        std::cout << "0. Volver" << std::endl;
+        std::cout << "Ingrese una opción: ";
+        
+        int opcion = leerOpcion();
+        
+        switch (opcion) {
+            case 1:
+                if (biblioteca.estaReproduciendo()) {
+                    biblioteca.pausar();
+                    std::cout << "Reproducción pausada." << std::endl;
+                } else {
+                    biblioteca.reanudar();
+                    std::cout << "Reproducción reanudada." << std::endl;
+                }
+                mostrarReproduccionActual();
+                break;
+            case 2:
+                if (biblioteca.anterior()) {
+                    std::cout << "Reproduciendo canción anterior." << std::endl;
+                } else {
+                    std::cout << "No hay canciones anteriores en el historial." << std::endl;
+                }
+                mostrarReproduccionActual();
+                  << std::endl;
+                }
+                mostrarReproduccionActual();
+                break;
+            case 3:
+                if (biblioteca.siguiente()) {
+                    std::cout << "Reproduciendo siguiente canción." << std::endl;
+                } else {
+                    std::cout << "No hay más canciones en la cola." << std::endl;
+                }
+                mostrarReproduccionActual();
+                break;
+        }
+    }
+    
+    void mostrarColaReproduccion() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("COLA DE REPRODUCCI" + UTF8Util::O_ACENTO() + "N") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        if (biblioteca.obtenerTamanioCola() == 0) {
+            std::cout << "La cola de reproducción está vacía." << std::endl;
+            return;
+        }
+        
+        std::cout << "Próximas canciones:" << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar encabezados de columnas
+        std::cout << UTF8Util::formatearTexto("Posición", 10) << " | ";
+        std::cout << UTF8Util::formatearTexto("Título", 30) << " | ";
+        std::cout << UTF8Util::formatearTexto("Artista", 20) << " | ";
+        std::cout << UTF8Util::formatearTexto("Álbum", 20) << std::endl;
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Simulación de mostrar la cola (no podemos acceder directamente a los elementos de la cola)
+        int siguienteEnCola = biblioteca.obtenerSiguienteEnCola();
+        if (siguienteEnCola != -1) {
+            Cancion cancion = biblioteca.obtenerCancion(siguienteEnCola);
+            
+            std::cout << UTF8Util::formatearTexto("Siguiente", 10) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.titulo, 30) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.artista, 20) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.album, 20) << std::endl;
+            
+            // Simulación de más elementos en la cola
+            for (int i = 1; i < biblioteca.obtenerTamanioCola(); i++) {
+                // Esto es una simulación, ya que no podemos acceder a los elementos de la cola directamente
+                int indiceAleatorio = rand() % biblioteca.obtenerNumCanciones();
+                Cancion cancionSimulada = biblioteca.obtenerCancion(indiceAleatorio);
+                
+                std::cout << UTF8Util::formatearTexto(std::to_string(i + 1), 10) << " | ";
+                std::cout << UTF8Util::formatearTexto(cancionSimulada.titulo, 30) << " | ";
+                std::cout << UTF8Util::formatearTexto(cancionSimulada.artista, 20) << " | ";
+                std::cout << UTF8Util::formatearTexto(cancionSimulada.album, 20) << std::endl;
+            }
+        }
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Opciones:" << std::endl;
+        std::cout << "1. Desencolar siguiente canción" << std::endl;
+        std::cout << "2. Agregar canción a la cola" << std::endl;
+        std::cout << "0. Volver" << std::endl;
+        std::cout << "Ingrese una opción: ";
+        
+        int opcion = leerOpcion();
+        
+        switch (opcion) {
+            case 1:
+                if (biblioteca.desencolarCancion()) {
+                    std::cout << "Canción desencolada." << std::endl;
+                } else {
+                    std::cout << "La cola está vacía." << std::endl;
+                }
+                mostrarColaReproduccion();
+                break;
+            case 2:
+                agregarCancionACola();
+                break;
+        }
+    }
+    
+    void agregarCancionACola() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("AGREGAR CANCI" + UTF8Util::O_ACENTO() + "N A LA COLA") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar canciones de la biblioteca
+        mostrarBiblioteca();
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Ingrese el índice de la canción a agregar: ";
+        
+        int indice = leerOpcion();
+        
+        if (indice >= 0 && indice < biblioteca.obtenerNumCanciones()) {
+            biblioteca.encolarCancion(indice);
+            std::cout << "Canción agregada a la cola." << std::endl;
+        } else {
+            std::cout << "Índice inválido." << std::endl;
+        }
+    }
+    
+    void mostrarHistorial() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("HISTORIAL DE REPRODUCCI" + UTF8Util::O_ACENTO() + "N") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        if (biblioteca.obtenerTamanioHistorial() == 0) {
+            std::cout << "El historial está vacío." << std::endl;
+            return;
+        }
+        
+        std::cout << "Últimas canciones reproducidas:" << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar encabezados de columnas
+        std::cout << UTF8Util::formatearTexto("Posición", 10) << " | ";
+        std::cout << UTF8Util::formatearTexto("Título", 30) << " | ";
+        std::cout << UTF8Util::formatearTexto("Artista", 20) << " | ";
+        std::cout << UTF8Util::formatearTexto("Álbum", 20) << std::endl;
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Simulación de mostrar el historial (no podemos acceder directamente a los elementos de la pila)
+        int ultimaCancion = biblioteca.obtenerUltimaCancionHistorial();
+        if (ultimaCancion != -1) {
+            Cancion cancion = biblioteca.obtenerCancion(ultimaCancion);
+            
+            std::cout << UTF8Util::formatearTexto("Última", 10) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.titulo, 30) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.artista, 20) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.album, 20) << std::endl;
+            
+            // Simulación de más elementos en el historial
+            for (int i = 1; i < biblioteca.obtenerTamanioHistorial(); i++) {
+                // Esto es una simulación, ya que no podemos acceder a los elementos de la pila directamente
+                int indiceAleatorio = rand() % biblioteca.obtenerNumCanciones();
+                Cancion cancionSimulada = biblioteca.obtenerCancion(indiceAleatorio);
+                
+                std::cout << UTF8Util::formatearTexto(std::to_string(i + 1), 10) << " | ";
+                std::cout << UTF8Util::formatearTexto(cancionSimulada.titulo, 30) << " | ";
+                std::cout << UTF8Util::formatearTexto(cancionSimulada.artista, 20) << " | ";
+                std::cout << UTF8Util::formatearTexto(cancionSimulada.album, 20) << std::endl;
+            }
+        }
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Opciones:" << std::endl;
+        std::cout << "1. Limpiar historial" << std::endl;
+        std::cout << "2. Volver a la última canción" << std::endl;
+        std::cout << "0. Volver" << std::endl;
+        std::cout << "Ingrese una opción: ";
+        
+        int opcion = leerOpcion();
+        
+        switch (opcion) {
+            case 1:
+                biblioteca.limpiarHistorial();
+                std::cout << "Historial limpiado." << std::endl;
+                break;
+            case 2:
+                if (biblioteca.anterior()) {
+                    std::cout << "Reproduciendo canción anterior." << std::endl;
+                    mostrarReproduccionActual();
+                } else {
+                    std::cout << "No hay canciones anteriores en el historial." << std::endl;
+                }
+                break;
+        }
+    }
+    
+    void mostrarRecomendaciones() {
+        limpiarPantalla();
+        std::cout << UTF8Util::formatearTitulo("RECOMENDACIONES") << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        if (biblioteca.obtenerCancionActual() == -1) {
+            std::cout << "No hay ninguna canción reproduciéndose. Reproduzca una canción para obtener recomendaciones." << std::endl;
+            return;
+        }
+        
+        Cancion cancionActual = biblioteca.obtenerCancion(biblioteca.obtenerCancionActual());
+        std::cout << "Basado en: " << cancionActual.titulo << " - " << cancionActual.artista << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        Lista<int> recomendaciones = biblioteca.obtenerRecomendaciones(biblioteca.obtenerCancionActual(), 5);
+        
+        if (recomendaciones.obtenerTamanio() == 0) {
+            std::cout << "No se encontraron recomendaciones." << std::endl;
+            return;
+        }
+        
+        std::cout << "Canciones recomendadas:" << std::endl;
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar encabezados de columnas
+        std::cout << UTF8Util::formatearTexto("Índice", 8) << " | ";
+        std::cout << UTF8Util::formatearTexto("Título", 30) << " | ";
+        std::cout << UTF8Util::formatearTexto("Artista", 20) << " | ";
+        std::cout << UTF8Util::formatearTexto("Álbum", 20) << std::endl;
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        
+        // Mostrar recomendaciones
+        for (int i = 0; i < recomendaciones.obtenerTamanio(); i++) {
+            int indice = recomendaciones.obtener(i);
+            Cancion cancion = biblioteca.obtenerCancion(indice);
+            
+            std::cout << UTF8Util::formatearTexto(std::to_string(indice), 8) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.titulo, 30) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.artista, 20) << " | ";
+            std::cout << UTF8Util::formatearTexto(cancion.album, 20) << std::endl;
+        }
+        
+        std::cout << UTF8Util::formatearLinea(80) << std::endl;
+        std::cout << "Opciones:" << std::endl;
+        std::cout << "1. Reproducir una recomendación" << std::endl;
+        std::cout << "2. Agregar todas las recomendaciones a la cola" << std::endl;
+        std::cout << "0. Volver" << std::endl;
+        std::cout << "Ingrese una opción: ";
+        
+        int opcion = leerOpcion();
+        
+        switch (opcion) {
+            case 1:
+                std::cout << "Ingrese el índice de la canción a reproducir: ";
+                int indice = leerOpcion();
+                
+                if (indice >= 0 && indice < biblioteca.obtenerNumCanciones()) {
+                    biblioteca.reproducir(indice);
+                    std::cout << "Reproduciendo canción." << std::endl;
+                    mostrarReproduccionActual();
+                } else {
+                    std::cout << "Índice inválido." << std::endl;
+                }
+                break;
+            case 2:
+                for (int i = 0; i < recomendaciones.obtenerTamanio(); i++) {
+                    int indice = recomendaciones.obtener(i);
+                    biblioteca.encolarCancion(indice);
+                }
+                std::cout << "Recomendaciones agregadas a la cola." << std::endl;
+                break;
+        }
     }
 };
 

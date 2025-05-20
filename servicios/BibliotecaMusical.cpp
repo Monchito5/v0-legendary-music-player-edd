@@ -5,7 +5,7 @@
 
 // Constructor de la biblioteca musical
 BibliotecaMusical::BibliotecaMusical() {
-    // Inicialización de la biblioteca vacía
+    // Inicializacion de la biblioteca vacía
 }
 
 // Destructor
@@ -33,10 +33,10 @@ bool BibliotecaMusical::cargarCancionesDesdeDirectorio(const std::string& rutaDi
     for (const auto& rutaArchivo : archivosMp3) {
         Cancion nuevaCancion;
         
-        // Aquí iría el código para extraer metadatos del archivo MP3
-        // Por ejemplo, usando una biblioteca como TagLib o implementación propia
+        // Aqui iria el codigo para extraer metadatos del archivo MP3
+        // Por ejemplo, usando una biblioteca como TagLib o implementacion propia
         
-        // Por ahora, simplemente extraemos el nombre del archivo como título
+        // Por ahora, simplemente extraemos el nombre del archivo como titulo
         size_t ultimaBarra = rutaArchivo.find_last_of("/\\");
         size_t ultimoPunto = rutaArchivo.find_last_of(".");
         
@@ -44,13 +44,13 @@ bool BibliotecaMusical::cargarCancionesDesdeDirectorio(const std::string& rutaDi
             nuevaCancion.titulo = rutaArchivo.substr(ultimaBarra + 1, ultimoPunto - ultimaBarra - 1);
             nuevaCancion.rutaArchivo = rutaArchivo;
             
-            // Valores por defecto para los demás campos
+            // Valores por defecto para los demas campos
             nuevaCancion.artista = "Desconocido";
             nuevaCancion.album = "Desconocido";
             nuevaCancion.anio = 0;
             nuevaCancion.genero = "Desconocido";
             
-            // Agregar la canción a la biblioteca
+            // Agregar la cancion a la biblioteca
             agregarCancion(nuevaCancion);
         }
     }
@@ -59,7 +59,7 @@ bool BibliotecaMusical::cargarCancionesDesdeDirectorio(const std::string& rutaDi
     return true;
 }
 
-// Agregar una canción a la biblioteca
+// Agregar una cancion a la biblioteca
 void BibliotecaMusical::agregarCancion(const Cancion& cancion) {
     canciones.agregar(cancion);
 }
@@ -83,7 +83,7 @@ void BibliotecaMusical::mostrarCanciones() const {
     
     std::cout << UTF8Util::formatearLinea(80) << std::endl;
     
-    // Recorrer y mostrar cada canción
+    // Recorrer y mostrar cada cancion
     for (int i = 0; i < canciones.obtenerTamanio(); i++) {
         Cancion cancion = canciones.obtener(i);
         

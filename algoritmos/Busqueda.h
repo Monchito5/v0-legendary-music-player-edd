@@ -1,109 +1,88 @@
-/**
- * @file Busqueda.h
- * @brief Implementaci√≥n de algoritmos de b√∫squeda desde cero
- * @author v0
- * @date Mayo 2025
- */
-
 #ifndef BUSQUEDA_H
 #define BUSQUEDA_H
 
+#include <string>
+#include <cctype>
+#include <functional>
 #include "../estructuras/Lista.h"
 
-/**
- * @brief Clase con m√©todos est√°ticos para algoritmos de b√∫squeda
- * @tparam T Tipo de dato a buscar
- */
 template <typename T>
 class Busqueda {
 public:
-    /**
-     * @brief Realiza una b√∫squeda lineal en una lista
-     * @param lista Lista donde buscar
-     * @param valor Valor a buscar
-     * @return √çndice del elemento encontrado o -1 si no se encuentra
-     */
-    static int busquedaLineal(const Lista<T>& lista, const T& valor) {
-        int tamano = lista.obtenerTamano();
-        
-        for (int i = 0; i < tamano; i++) {
-            T actual;
-            lista.obtener(i, actual);
-            
-            if (actual == valor) {
+    // B˙squeda lineal
+    static int busquedaLineal(const Lista<T>& lista, const T& elemento) {
+        for (int i = 0; i < lista.obtenerTamanio(); i++) {
+            if (lista.obtener(i) == elemento) {
                 return i;
             }
         }
-        
         return -1;
     }
-    
-    /**
-     * @brief Realiza una b√∫squeda binaria en una lista ordenada
-     * @param lista Lista ordenada donde buscar
-     * @param valor Valor a buscar
-     * @param ascendente true si la lista est√° ordenada ascendentemente, false si est√° descendentemente
-     * @return √çndice del elemento encontrado o -1 si no se encuentra
-     */
-    static int busquedaBinaria(const Lista<T>& lista, const T& valor, bool ascendente = true) {
+
+    // B˙squeda binaria (requiere que la lista estÈ ordenada)
+    static int busquedaBinaria(const Lista<T>& lista, const T& elemento) {
         int inicio = 0;
-        int fin = lista.obtenerTamano() - 1;
-        
+        int fin = lista.obtenerTamanio() - 1;
+
         while (inicio <= fin) {
             int medio = inicio + (fin - inicio) / 2;
-            T valorMedio;
-            lista.obtener(medio, valorMedio);
-            
-            // Si el elemento est√° presente en el medio
-            if (valorMedio == valor) {
+
+            if (lista.obtener(medio) == elemento) {
                 return medio;
             }
-            
-            if (ascendente) {
-                // Si el valor es mayor, ignorar la mitad izquierda
-                if (valorMedio < valor) {
-                    inicio = medio + 1;
-                }
-                // Si el valor es menor, ignorar la mitad derecha
-                else {
-                    fin = medio - 1;
-                }
+
+            if (lista.obtener(medio) < elemento) {
+                inicio = medio + 1;
             } else {
-                // Si el valor es menor, ignorar la mitad izquierda (para orden descendente)
-                if (valorMedio > valor) {
-                    inicio = medio + 1;
-                }
-                // Si el valor es mayor, ignorar la mitad derecha (para orden descendente)
-                else {
-                    fin = medio - 1;
-                }
+                fin = medio - 1;
             }
         }
-        
-        // Elemento no encontrado
+
         return -1;
     }
-    
-    /**
-     * @brief Realiza una b√∫squeda por criterio en una lista
-     * @param lista Lista donde buscar
-     * @param criterio Funci√≥n que eval√∫a si un elemento cumple con el criterio
-     * @return Lista con los √≠ndices de los elementos que cumplen el criterio
-     */
+
+    // B˙squeda por criterio usando puntero a funciÛn
     static Lista<int> busquedaPorCriterio(const Lista<T>& lista, bool (*criterio)(const T&)) {
         Lista<int> resultados;
-        int tamano = lista.obtenerTamano();
-        
-        for (int i = 0; i < tamano; i++) {
-            T actual;
-            lista.obtener(i, actual);
-            
-            if (criterio(actual)) {
+
+        for (int i = 0; i < lista.obtenerTamanio(); i++) {
+            if (criterio(lista.obtener(i))) {
                 resultados.agregar(i);
             }
         }
-        
+
         return resultados;
+    }
+
+    // B˙squeda por criterio usando funciÛn lambda (nueva funciÛn)
+    template <typename Func>
+    static Lista<int> busquedaPorCriterioFunc(const Lista<T>& lista, Func criterio) {
+        Lista<int> resultados;
+
+        for (int i = 0; i < lista.obtenerTamanio(); i++) {
+            if (criterio(lista.obtener(i))) {
+                resultados.agregar(i);
+            }
+        }
+
+        return resultados;
+    }
+
+    // Utilidad para convertir a min˙sculas
+    static std::string aMinusculas(const std::string& texto) {
+        std::string resultado = texto;
+        for (size_t i = 0; i < resultado.length(); i++) {
+            resultado[i] = std::tolower(resultado[i]);
+        }
+        return resultado;
+    }
+
+    // Utilidad para verificar si una cadena contiene otra (insensible a may˙sculas/min˙sculas)
+    static bool contieneCadenaInsensible(const std::string& texto, const std::string& busqueda) {
+        std::string textoMin = aMinusculas(texto);
+        std::string busquedaMin = aMinusculas(busqueda);
+
+        return textoMin.find(busquedaMin) != std::string::npos;
     }
 };
 
