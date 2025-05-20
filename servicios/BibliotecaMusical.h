@@ -11,7 +11,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include <filesystem>
+//#include <filesystem> // Para la función std::filesystem::path
 #include "../estructuras/Lista.h"
 #include "../estructuras/Grafo.h"
 #include "../modelos/Cancion.h"
@@ -32,7 +32,7 @@ private:
     std::string directorioMusica;       ///< Directorio donde se almacena la música
     std::string archivoBiblioteca;      ///< Archivo para guardar la biblioteca
     std::string archivoPlaylists;       ///< Archivo para guardar las playlists
-    
+
 public:
     /**
      * @brief Constructor con parámetros
@@ -46,12 +46,12 @@ public:
         : directorioMusica(_directorioMusica),
           archivoBiblioteca(_archivoBiblioteca),
           archivoPlaylists(_archivoPlaylists) {
-        
+
         // Crear directorios si no existen
         fs::create_directories(directorioMusica);
         fs::create_directories(fs::path(archivoBiblioteca).parent_path());
     }
-    
+
     /**
      * @brief Carga la biblioteca desde el disco
      * @return true si se cargó correctamente, false en caso contrario
@@ -59,22 +59,22 @@ public:
     bool cargarBiblioteca() {
         // Primero intentamos cargar desde el archivo de biblioteca
         bool cargadoDesdeArchivo = cargarBibliotecaDesdeArchivo();
-        
+
         // Si no hay archivo o falló la carga, escaneamos el directorio
         if (!cargadoDesdeArchivo) {
             escanearDirectorioMusica();
             guardarBibliotecaEnArchivo();
         }
-        
+
         // Cargar playlists
         cargarPlaylistsDesdeArchivo();
-        
+
         // Construir grafo de afinidad
         construirGrafoAfinidad();
-        
+
         return true;
     }
-    
+
     /**
      * @brief Guarda la biblioteca en el disco
      * @return true si se guardó correctamente, false en caso contrario
@@ -82,7 +82,7 @@ public:
     bool guardarBiblioteca() {
         return guardarBibliotecaEnArchivo() && guardarPlaylistsEnArchivo();
     }
-    
+
     /**
      * @brief Agrega una canción a la biblioteca
      * @param cancion Canción a agregar
@@ -91,7 +91,7 @@ public:
         canciones.agregar(cancion);
         actualizarGrafoAfinidad(cancion);
     }
-    
+
     /**
      * @brief Elimina una canción de la biblioteca por su posición
      * @param posicion Posición de la canción (0-indexado)
@@ -108,12 +108,12 @@ public:
                 playlists.eliminar(i);
                 playlists.insertar(playlist, i);
             }
-            
+
             return canciones.eliminar(posicion);
         }
         return false;
     }
-    
+
     /**
      * @brief Obtiene una canción por su posición
      * @param posicion Posición de la canción (0-indexado)
@@ -123,7 +123,7 @@ public:
     bool obtenerCancion(int posicion, Cancion& resultado) const {
         return canciones.obtener(posicion, resultado);
     }
-    
+
     /**
      * @brief Busca canciones por título (búsqueda lineal)
      * @param titulo Título a buscar
@@ -134,7 +134,7 @@ public:
             return c.obtenerTitulo().find(titulo) != std::string::npos;
         });
     }
-    
+
     /**
      * @brief Busca canciones por artista (búsqueda lineal)
      * @param artista Artista a buscar
@@ -145,7 +145,7 @@ public:
             return c.obtenerArtista().find(artista) != std::string::npos;
         });
     }
-    
+
     /**
      * @brief Busca canciones por álbum (búsqueda lineal)
      * @param album Álbum a buscar
@@ -156,7 +156,7 @@ public:
             return c.obtenerAlbum().find(album) != std::string::npos;
         });
     }
-    
+
     /**
      * @brief Busca canciones por género (búsqueda lineal)
      * @param genero Género a buscar
@@ -173,7 +173,7 @@ public:
             return false;
         });
     }
-    
+
     /**
      * @brief Ordena las canciones por título
      * @param ascendente true para ordenar ascendentemente, false para descendentemente
@@ -197,7 +197,7 @@ public:
                 Ordenamiento<Cancion>::quickSort(canciones, ascendente);
         }
     }
-    
+
     /**
      * @brief Crea una nueva playlist
      * @param nombre Nombre de la playlist
@@ -210,11 +210,11 @@ public:
                 return false;
             }
         }
-        
+
         playlists.agregar(Playlist(nombre));
         return true;
     }
-    
+
     /**
      * @brief Elimina una playlist por su posición
      * @param posicion Posición de la playlist (0-indexado)
@@ -223,7 +223,7 @@ public:
     bool eliminarPlaylist(int posicion) {
         return playlists.eliminar(posicion);
     }
-    
+
     /**
      * @brief Renombra una playlist
      * @param posicion Posición de la playlist (0-indexado)
@@ -240,7 +240,7 @@ public:
         }
         return false;
     }
-    
+
     /**
      * @brief Agrega una canción a una playlist
      * @param posicionPlaylist Posición de la playlist (0-indexado)
@@ -250,19 +250,19 @@ public:
     bool agregarCancionAPlaylist(int posicionPlaylist, int posicionCancion) {
         Playlist playlist;
         Cancion cancion;
-        
-        if (playlists.obtener(posicionPlaylist, playlist) && 
+
+        if (playlists.obtener(posicionPlaylist, playlist) &&
             canciones.obtener(posicionCancion, cancion)) {
-            
+
             playlist.agregarCancion(cancion);
             playlists.eliminar(posicionPlaylist);
             playlists.insertar(playlist, posicionPlaylist);
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * @brief Elimina una canción de una playlist
      * @param posicionPlaylist Posición de la playlist (0-indexado)
@@ -271,7 +271,7 @@ public:
      */
     bool eliminarCancionDePlaylist(int posicionPlaylist, int posicionCancion) {
         Playlist playlist;
-        
+
         if (playlists.obtener(posicionPlaylist, playlist)) {
             if (playlist.eliminarCancion(posicionCancion)) {
                 playlists.eliminar(posicionPlaylist);
@@ -279,10 +279,10 @@ public:
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * @brief Obtiene una playlist por su posición
      * @param posicion Posición de la playlist (0-indexado)
@@ -292,7 +292,7 @@ public:
     bool obtenerPlaylist(int posicion, Playlist& resultado) const {
         return playlists.obtener(posicion, resultado);
     }
-    
+
     /**
      * @brief Obtiene el número de canciones en la biblioteca
      * @return Número de canciones
@@ -300,7 +300,7 @@ public:
     int obtenerNumeroCanciones() const {
         return canciones.obtenerTamano();
     }
-    
+
     /**
      * @brief Obtiene el número de playlists
      * @return Número de playlists
@@ -308,7 +308,7 @@ public:
     int obtenerNumeroPlaylists() const {
         return playlists.obtenerTamano();
     }
-    
+
     /**
      * @brief Obtiene recomendaciones basadas en una canción
      * @param posicionCancion Posición de la canción base (0-indexado)
@@ -318,30 +318,30 @@ public:
     Lista<int> obtenerRecomendaciones(int posicionCancion, int cantidad = 5) const {
         Lista<int> recomendaciones;
         Cancion cancion;
-        
+
         if (!canciones.obtener(posicionCancion, cancion)) {
             return recomendaciones;
         }
-        
+
         // Obtener géneros y artista de la canción base
         const Lista<std::string>& generos = cancion.obtenerGeneros();
         std::string artista = cancion.obtenerArtista();
-        
+
         // Buscar canciones con géneros o artistas similares
         for (int i = 0; i < canciones.obtenerTamano() && recomendaciones.obtenerTamano() < cantidad; i++) {
             if (i == posicionCancion) {
                 continue; // Saltar la canción base
             }
-            
+
             Cancion candidata;
             canciones.obtener(i, candidata);
-            
+
             // Verificar si comparten artista
             if (candidata.obtenerArtista() == artista) {
                 recomendaciones.agregar(i);
                 continue;
             }
-            
+
             // Verificar si comparten al menos un género
             const Lista<std::string>& generosCandidata = candidata.obtenerGeneros();
             for (auto it = generos.inicio(); it != generos.fin(); ++it) {
@@ -353,10 +353,10 @@ public:
                 }
             }
         }
-        
+
         return recomendaciones;
     }
-    
+
 private:
     /**
      * @brief Escanea el directorio de música para encontrar archivos de audio
@@ -366,7 +366,7 @@ private:
             for (const auto& entrada : fs::directory_iterator(directorioMusica)) {
                 if (entrada.is_regular_file()) {
                     std::string extension = entrada.path().extension().string();
-                    
+
                     // Verificar si es un archivo de audio
                     if (extension == ".mp3" || extension == ".wav" || extension == ".ogg" || extension == ".flac") {
                         // Extraer metadatos del nombre del archivo (simplificado)
@@ -375,18 +375,18 @@ private:
                         std::string artista = "Desconocido";
                         std::string album = "Desconocido";
                         int anio = 0;
-                        
+
                         // Intentar extraer artista y título si el formato es "Artista - Título"
                         size_t separador = nombreArchivo.find(" - ");
                         if (separador != std::string::npos) {
                             artista = nombreArchivo.substr(0, separador);
                             titulo = nombreArchivo.substr(separador + 3);
                         }
-                        
+
                         // Crear la canción y agregarla a la biblioteca
                         Cancion cancion(titulo, artista, album, anio, entrada.path().string(), 0);
                         cancion.agregarGenero("Desconocido");
-                        
+
                         canciones.agregar(cancion);
                     }
                 }
@@ -395,7 +395,7 @@ private:
             std::cerr << "Error al escanear directorio: " << e.what() << std::endl;
         }
     }
-    
+
     /**
      * @brief Carga la biblioteca desde un archivo
      * @return true si se cargó correctamente, false en caso contrario
@@ -405,13 +405,13 @@ private:
         if (!archivo) {
             return false;
         }
-        
+
         std::string linea;
         while (std::getline(archivo, linea)) {
             std::istringstream ss(linea);
             std::string titulo, artista, album, rutaArchivo, genero;
             int anio, duracionSegundos;
-            
+
             // Formato: título|artista|álbum|año|duración|ruta|género1,género2,...
             std::getline(ss, titulo, '|');
             std::getline(ss, artista, '|');
@@ -422,23 +422,23 @@ private:
             ss.ignore();
             std::getline(ss, rutaArchivo, '|');
             std::getline(ss, genero);
-            
+
             Cancion cancion(titulo, artista, album, anio, rutaArchivo, duracionSegundos);
-            
+
             // Procesar géneros
             std::istringstream ssGeneros(genero);
             std::string g;
             while (std::getline(ssGeneros, g, ',')) {
                 cancion.agregarGenero(g);
             }
-            
+
             canciones.agregar(cancion);
         }
-        
+
         archivo.close();
         return true;
     }
-    
+
     /**
      * @brief Guarda la biblioteca en un archivo
      * @return true si se guardó correctamente, false en caso contrario
@@ -448,11 +448,11 @@ private:
         if (!archivo) {
             return false;
         }
-        
+
         for (int i = 0; i < canciones.obtenerTamano(); i++) {
             Cancion cancion;
             canciones.obtener(i, cancion);
-            
+
             // Formato: título|artista|álbum|año|duración|ruta|género1,género2,...
             archivo << cancion.obtenerTitulo() << "|"
                     << cancion.obtenerArtista() << "|"
@@ -460,7 +460,7 @@ private:
                     << cancion.obtenerAnio() << "|"
                     << cancion.obtenerDuracionSegundos() << "|"
                     << cancion.obtenerRutaArchivo() << "|";
-            
+
             // Escribir géneros
             const Lista<std::string>& generos = cancion.obtenerGeneros();
             bool primero = true;
@@ -471,14 +471,14 @@ private:
                 archivo << *it;
                 primero = false;
             }
-            
+
             archivo << std::endl;
         }
-        
+
         archivo.close();
         return true;
     }
-    
+
     /**
      * @brief Carga las playlists desde un archivo
      * @return true si se cargó correctamente, false en caso contrario
@@ -488,22 +488,22 @@ private:
         if (!archivo) {
             return false;
         }
-        
+
         std::string linea;
         while (std::getline(archivo, linea)) {
             if (linea.empty()) {
                 continue;
             }
-            
+
             // La primera línea es el nombre de la playlist
             std::string nombrePlaylist = linea;
             Playlist playlist(nombrePlaylist);
-            
+
             // La siguiente línea contiene los índices de las canciones
             if (std::getline(archivo, linea)) {
                 std::istringstream ss(linea);
                 int indiceCancion;
-                
+
                 while (ss >> indiceCancion) {
                     Cancion cancion;
                     if (canciones.obtener(indiceCancion, cancion)) {
@@ -511,14 +511,14 @@ private:
                     }
                 }
             }
-            
+
             playlists.agregar(playlist);
         }
-        
+
         archivo.close();
         return true;
     }
-    
+
     /**
      * @brief Guarda las playlists en un archivo
      * @return true si se guardó correctamente, false en caso contrario
@@ -528,39 +528,39 @@ private:
         if (!archivo) {
             return false;
         }
-        
+
         for (int i = 0; i < playlists.obtenerTamano(); i++) {
             Playlist playlist;
             playlists.obtener(i, playlist);
-            
+
             // Escribir nombre de la playlist
             archivo << playlist.obtenerNombre() << std::endl;
-            
+
             // Escribir índices de las canciones
             const Lista<Cancion>& cancionesPlaylist = playlist.obtenerCanciones();
             for (int j = 0; j < cancionesPlaylist.obtenerTamano(); j++) {
                 Cancion cancionPlaylist;
                 cancionesPlaylist.obtener(j, cancionPlaylist);
-                
+
                 // Buscar el índice de la canción en la biblioteca
                 for (int k = 0; k < canciones.obtenerTamano(); k++) {
                     Cancion cancionBiblioteca;
                     canciones.obtener(k, cancionBiblioteca);
-                    
+
                     if (cancionPlaylist == cancionBiblioteca) {
                         archivo << k << " ";
                         break;
                     }
                 }
             }
-            
+
             archivo << std::endl;
         }
-        
+
         archivo.close();
         return true;
     }
-    
+
     /**
      * @brief Construye el grafo de afinidad para recomendaciones
      */
@@ -568,18 +568,18 @@ private:
         // Agregar vértices para géneros y artistas
         Lista<std::string> generosTotales;
         Lista<std::string> artistasTotales;
-        
+
         // Recopilar todos los géneros y artistas únicos
         for (int i = 0; i < canciones.obtenerTamano(); i++) {
             Cancion cancion;
             canciones.obtener(i, cancion);
-            
+
             // Agregar artista si no existe
             std::string artista = cancion.obtenerArtista();
             if (Busqueda<std::string>::busquedaLineal(artistasTotales, artista) == -1) {
                 artistasTotales.agregar(artista);
             }
-            
+
             // Agregar géneros si no existen
             const Lista<std::string>& generos = cancion.obtenerGeneros();
             for (auto it = generos.inicio(); it != generos.fin(); ++it) {
@@ -588,35 +588,35 @@ private:
                 }
             }
         }
-        
+
         // Agregar vértices al grafo
         for (auto it = generosTotales.inicio(); it != generosTotales.fin(); ++it) {
             grafoAfinidad.agregarVertice(*it);
         }
-        
+
         for (auto it = artistasTotales.inicio(); it != artistasTotales.fin(); ++it) {
             grafoAfinidad.agregarVertice(*it);
         }
-        
+
         // Crear aristas entre géneros y artistas
         for (int i = 0; i < canciones.obtenerTamano(); i++) {
             Cancion cancion;
             canciones.obtener(i, cancion);
-            
+
             std::string artista = cancion.obtenerArtista();
             int indiceArtista = grafoAfinidad.buscarVertice(artista);
-            
+
             const Lista<std::string>& generos = cancion.obtenerGeneros();
             for (auto it = generos.inicio(); it != generos.fin(); ++it) {
                 int indiceGenero = grafoAfinidad.buscarVertice(*it);
-                
+
                 // Crear arista bidireccional entre artista y género
                 grafoAfinidad.agregarArista(indiceArtista, indiceGenero, 1);
                 grafoAfinidad.agregarArista(indiceGenero, indiceArtista, 1);
             }
         }
     }
-    
+
     /**
      * @brief Actualiza el grafo de afinidad al agregar una nueva canción
      * @param cancion Canción agregada
@@ -624,22 +624,22 @@ private:
     void actualizarGrafoAfinidad(const Cancion& cancion) {
         std::string artista = cancion.obtenerArtista();
         int indiceArtista = grafoAfinidad.buscarVertice(artista);
-        
+
         // Si el artista no existe, agregarlo
         if (indiceArtista == -1) {
             indiceArtista = grafoAfinidad.agregarVertice(artista);
         }
-        
+
         // Procesar géneros
         const Lista<std::string>& generos = cancion.obtenerGeneros();
         for (auto it = generos.inicio(); it != generos.fin(); ++it) {
             int indiceGenero = grafoAfinidad.buscarVertice(*it);
-            
+
             // Si el género no existe, agregarlo
             if (indiceGenero == -1) {
                 indiceGenero = grafoAfinidad.agregarVertice(*it);
             }
-            
+
             // Crear arista bidireccional entre artista y género
             grafoAfinidad.agregarArista(indiceArtista, indiceGenero, 1);
             grafoAfinidad.agregarArista(indiceGenero, indiceArtista, 1);
