@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1747726226 source:c:\users\moncho\downloads\v0-legendary-music-player-edd\main.cpp
+	<iostream>
+	<string>
+	<cstdlib>
+	<ctime>
+	<functional>
+	<algorithm>
+	<cctype>
+	<limits>
+
